@@ -2,7 +2,7 @@
 
 A [Claude skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills) that turns a picture of an event into a calendar hold. Attach a screenshot, flyer, poster, or a photo of a poster on the street, say "calendar this" (or any trigger phrase in [SKILL.md](SKILL.md)), and a 📌 Hold lands on a dedicated Google Calendar with everything needed to actually attend — tickets link on top, venue address, and the full flyer context with live links.
 
-The part that makes it more than OCR: before filing, the skill finds the event's real page on the web and verifies the image against it. Flyers are wrong about dates and times more often than you'd think, and the page wins on conflict.
+The part that makes it more than OCR: before filing, the skill finds the event's real page on the web. That's what makes the hold complete — the live tickets link and street address are already in it when you decide to go — and it doubles as a fact-check, with the page winning over the image on any conflict.
 
 ## How it works
 
