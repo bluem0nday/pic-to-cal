@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.3.0
+version: 0.4.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Use this skill — invoked as either "pic-to-cal" or "pic to cal" — whenever the user attaches an image AND uses one of these specific phrases, even if the image looks like it could be handled by another skill: "add this flyer", "hold this event", "process this screenshot", "save this poster", "remind me about this", "pic to cal", "pic-to-cal", "calendar this", "create a calendar event for this screenshot", "create a calendar event for this photo", "create a calendar event from this", or any close variant of those phrases that pairs an image with a request to put something on the calendar. This includes screenshots pasted or dragged into a desktop Claude session, not just phone attachments — a copy/pasted screenshot or photo plus any of these phrases is the desktop use case and must trigger the skill. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached. If the user types a trigger phrase with no image, ask them to attach one rather than running the skill.
 ---
 
@@ -41,6 +41,10 @@ Follow these nine steps in order. One question at a time. Never batch questions 
 Read every piece of visible text in the image — title, dates, times, host names, speaker names, location, URL, handle, caption, hashtag, fine print. Don't summarize. Capture it raw.
 
 Real-world photos (as opposed to screenshots) come with glare, angles, torn corners, and stickers over the text. Transcribe what's legible and mark unreadable spots as `[illegible]` — don't fill gaps with guesses. A guessed date on the calendar is worse than a flagged one.
+
+**The event's flyer only.** A street photo usually contains more than the flyer — other posters, tear-off tabs, stickers, 3–20 unrelated things on the same pole is common. Once it's clear which one the event is, transcribe that flyer and nothing else. The surrounding material goes nowhere: not the transcription shown in chat, not the invite, not even as "[unrelated, ignored]" footnotes. It's token clutter and brain clutter (Matt, 2026-07-05 — Dom Dolla pole poster).
+
+A corroborating signal inside the image can confirm an inferred field — e.g. a countdown timer ("1 week 6 days until the event") confirming that a year-less date is this year. Use it silently; it's a check, not content for the invite.
 
 Show Matt the full transcription before doing anything else. Format:
 
@@ -144,6 +148,8 @@ On any conflict, the page wins. Use the page's value for the calendar event. Don
 
 While you're here, recover the venue's full street address if the image only named a venue or host. The registration page usually lists it; if not, one extra search on the venue name is fine. Carry the full address into the `location` field at step 8 so Google Calendar can geocode it.
 
+**Always check ticket availability while reading the page** (Matt, 2026-07-05 — LIXIL sold-out case). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line directly under the main link in the body — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding.
+
 If the page is unreachable or returns an error, treat this as no page found and proceed to step 6.
 
 ### Step 6: Handle no-page-found
@@ -164,15 +170,18 @@ Reserve "verified" for actual corroboration. A link existing is not verification
 
 ### Step 7: Single confirm before create
 
-Show one summary block and ask one yes/no question:
+Show one summary block and ask one yes/no question. **The block includes the full invite body, labeled `Description:` (Google Calendar's own name for the field), rendered as it will read in the calendar** — links, caution lines, labeled blocks, transcription, verification footer. Never a header-only confirm: Matt inspects the body before saying yes (Matt, 2026-07-05).
 
 ```
 Ready to file:
-Title:    📌 Hold: [event title]
-When:     [date] · [start]–[end] [TZ]
-Where:    [location or "Virtual"]
-URL:      [registration URL or "(none — unverified)"]
-Calendar: Pic to Cal Events
+Title:       📌 Hold: [event title]
+When:        [date] · [start]–[end] [TZ]
+Where:       [location or "Virtual"]
+Calendar:    Pic to Cal Events
+
+Description:
+[the full body from step 8, rendered as plain text the way Google
+Calendar will display it]
 
 Schedule it? (yes / no / fix)
 ```
@@ -184,6 +193,8 @@ Schedule it? (yes / no / fix)
 **Past dates don't matter.** A date in the past is not an error and not noise — the data is the data, and Matt tests with old flyers as much as upcoming ones. File it the same way. The only courtesy: if the resolved date is already past, add one neutral line to the confirm — `Heads up: this date is already past. Still schedule it? (yes / no)` — then proceed on yes. Don't moralize, don't refuse, don't call it noise.
 
 ### Step 8: Create the calendar event
+
+**Sourcing rule for everything in the invite (Matt, 2026-07-05):** every fact traces to the image or a page checked during this run. Never add background knowledge — genre labels, artist facts, venue lore — no matter how confident. If it isn't in a source Matt can open, it doesn't go in. (The cut that set the rule: "house/dance" as a genre gloss on a Dom Dolla show — true, but sourced from the model, not the flyer or pages.) Synthesis lines like Topic re-say the sources' own words, nothing more. The only exception: resolving a named venue to its standard street address for geocoding — that's plumbing, not content.
 
 Use the Google Calendar `create_event` tool with:
 
@@ -238,11 +249,10 @@ Footer line, pick the one matching the verification state from step 6:
 
 ### Step 9: Report back
 
-One line plus the link the calendar tool returns:
+One line plus the link the calendar tool returns, **delivered as a labeled markdown link — never the bare URL** (event links on the dedicated calendar run hundreds of characters; Matt, 2026-07-05: "all I need is something to click on"):
 
 ```
-HOLD filed: [event title], [date] [start] [TZ]
-[calendar event URL]
+HOLD filed: [📌 Hold: [event title] — [Mon D, time]]([calendar event URL])
 ```
 
 That's it. Don't summarize what was done. Don't list the description fields back. The clickable calendar link IS the deliverable — put it directly in the reply, every single time, formatted as a link Matt can tap. Never make him ask for it, never make him go find the event in his calendar himself (Matt, 2026-07-04: "never make me go look for the link").

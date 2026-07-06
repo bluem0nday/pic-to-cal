@@ -2,6 +2,17 @@
 
 Semver for the skill itself. (Separate from BACKLOG.md's roadmap versions, which describe feature *scope* — v0.2 scope, v0.3 eval, etc. This file tracks what actually shipped in SKILL.md.)
 
+## 0.4.0 — 2026-07-05
+
+Live-testing session (tests 6–8: a Planning Pod registration-page screenshot, a multi-session tarot poster that correctly hit the multi-event guardrail, and a Dom Dolla street poster — first real flyer photo, wrapped around a pole in blackletter type, filed ✓ Verified).
+
+- **Confirm shows the full invite.** The step-7 confirm block now includes the complete body, labeled `Description:` (Google Calendar's field name), rendered as it will read on the calendar. Never a header-only confirm.
+- **Availability check.** Every page fetch looks for ticket-availability signals (sold out / waitlist / sales ended / N remaining). When present, a dated caution line goes directly under the main link. Page silence adds nothing.
+- **The event's flyer only.** Street photos usually carry unrelated posters, tabs, and stickers around the event's flyer. None of it is transcribed anywhere — no cataloging, no "[unrelated]" footnotes. Token clutter and brain clutter.
+- **No background knowledge in the invite.** Every fact traces to the image or a page checked during the run. Genre labels, artist facts, venue lore from the model's own knowledge stay out — synthesis lines re-say the sources' words only. (Exception: venue-to-address resolution for geocoding.)
+- **Labeled calendar link.** The step-9 report delivers the event link as a labeled markdown link, never the bare URL (dedicated-calendar URLs run hundreds of characters).
+- **In-image corroboration.** Signals inside the image (e.g. a countdown timer) can silently confirm an inferred field like a missing year — a check, not invite content.
+
 ## 0.3.0 — 2026-07-04
 
 Live-testing session (tests 3–5: Lost Arts open studio, Angelika Twin Peaks double feature, Midsummer Ball — first ✓ Verified filing).
