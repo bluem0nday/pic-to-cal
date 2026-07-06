@@ -2,6 +2,10 @@
 
 Semver for the skill itself. (Separate from BACKLOG.md's roadmap versions, which describe feature *scope* — v0.2 scope, v0.3 eval, etc. This file tracks what actually shipped in SKILL.md.)
 
+## 0.4.1 — 2026-07-05
+
+- **Generalized the ignore-the-frame rule.** 0.4.0 worded the flyer-only transcription rule around pole clutter — misleadingly narrow. The rule is about the photograph's frame in any setting (billboard, subway poster, program on a desk): once the event is identified, everything else in the frame is ignored, without explanation.
+
 ## 0.4.0 — 2026-07-05
 
 Live-testing session (tests 6–8: a Planning Pod registration-page screenshot, a multi-session tarot poster that correctly hit the multi-event guardrail, and a Dom Dolla street poster — first real flyer photo, wrapped around a pole in blackletter type, filed ✓ Verified).

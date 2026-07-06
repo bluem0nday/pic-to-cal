@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.4.0
+version: 0.4.1
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Use this skill — invoked as either "pic-to-cal" or "pic to cal" — whenever the user attaches an image AND uses one of these specific phrases, even if the image looks like it could be handled by another skill: "add this flyer", "hold this event", "process this screenshot", "save this poster", "remind me about this", "pic to cal", "pic-to-cal", "calendar this", "create a calendar event for this screenshot", "create a calendar event for this photo", "create a calendar event from this", or any close variant of those phrases that pairs an image with a request to put something on the calendar. This includes screenshots pasted or dragged into a desktop Claude session, not just phone attachments — a copy/pasted screenshot or photo plus any of these phrases is the desktop use case and must trigger the skill. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached. If the user types a trigger phrase with no image, ask them to attach one rather than running the skill.
 ---
 
@@ -42,7 +42,7 @@ Read every piece of visible text in the image — title, dates, times, host name
 
 Real-world photos (as opposed to screenshots) come with glare, angles, torn corners, and stickers over the text. Transcribe what's legible and mark unreadable spots as `[illegible]` — don't fill gaps with guesses. A guessed date on the calendar is worse than a flagged one.
 
-**The event's flyer only.** A street photo usually contains more than the flyer — other posters, tear-off tabs, stickers, 3–20 unrelated things on the same pole is common. Once it's clear which one the event is, transcribe that flyer and nothing else. The surrounding material goes nowhere: not the transcription shown in chat, not the invite, not even as "[unrelated, ignored]" footnotes. It's token clutter and brain clutter (Matt, 2026-07-05 — Dom Dolla pole poster).
+**The event only — ignore the rest of the frame.** A photo's frame almost always holds more than the event: a flyer on a pole among tear-off tabs and stickers, a billboard over a street, a poster in a subway car, a program lying on a desk. The setting doesn't matter and neither does the count of unrelated things (3–20 is common). Once it's clear which thing in the photograph IS the event, transcribe that and nothing else. Everything else in the frame goes nowhere: not the transcription shown in chat, not the invite, not even as "[unrelated, ignored]" footnotes. It's token clutter and brain clutter (Matt, 2026-07-05 — Dom Dolla pole poster; generalized same day: the rule is about the frame, not poles).
 
 A corroborating signal inside the image can confirm an inferred field — e.g. a countdown timer ("1 week 6 days until the event") confirming that a year-less date is this year. Use it silently; it's a check, not content for the invite.
 
