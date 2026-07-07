@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.5.0
+version: 0.6.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached: if a trigger phrase arrives with no image, ask for one rather than running the skill.
 ---
 
@@ -130,6 +130,8 @@ Stop after two tries. Don't keep guessing.
 
 If a registration URL was found, fetch it. Compare the page to the image transcription on these fields: title, date, start time, end time, timezone, location, speakers.
 
+**Known fetch-blocked platforms — don't spend a fetch on them (2026-07-07 speed rule; a complete flyer took ~5 minutes, mostly on doomed fetches).** ra.co, AXS, and Ticket Tailor have returned 403 to every fetch attempt across tests. When the best source is on one of these, skip the fetch: corroborate from the search listing itself (the title carries event, venue, and date) and use the listing URL as the link, with the per-field caution on anything the listing doesn't show (times, usually). If another domain 403s in two different runs, treat it the same way.
+
 **Timezone: printed beats derived.** A timezone printed in the image or on the page wins as-is (platforms localize to the viewer — see step 3). When nothing is printed, resolve from the venue: for a physical event, the timezone is the venue's. Get the address (from the page or one venue search) and map it to its IANA zone: Brooklyn → `America/New_York`, San Francisco → `America/Los_Angeles`, Chicago → `America/Chicago`. The printed start time is venue-local. For a **virtual** event with no physical address: use the TZ printed on the flyer or page if shown; if none is shown, fall back to the user's home timezone — read it from their primary calendar via `list_calendars`. Either way, Google Calendar displays the event in the user's current local time automatically, so they always see it relative to themselves while the stored moment stays correct for the venue. No need to flag TZ as low-confidence when there's an address.
 
 If every field matches (allowing for small text differences like "Thursday Jun 4" vs "June 4, 2026"), say nothing — go straight to step 7. Don't show a comparison block when there's nothing to look at.
@@ -146,7 +148,7 @@ Image vs. registration page:
 
 On any conflict, the page wins. Use the page's value for the calendar event. Don't ask the user to choose.
 
-While you're here, recover the venue's full street address if the image only named a venue or host. The registration page usually lists it; if not, one extra search on the venue name is fine. Carry the full address into the `location` field at step 8 so Google Calendar can geocode it.
+While you're here, recover the venue's full street address if the image only named a venue or host. The registration page usually lists it; if not, check the results already on screen from the step-4 search first — addresses routinely appear in listing snippets (Yelp, maps, venue directories). Only run a dedicated venue search when the address genuinely isn't already in hand (2026-07-07 speed rule). Carry the full address into the `location` field at step 8 so Google Calendar can geocode it.
 
 **Always check ticket availability while reading the page** (2026-07-05, LIXIL sold-out test). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line directly under the main link in the body — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding.
 

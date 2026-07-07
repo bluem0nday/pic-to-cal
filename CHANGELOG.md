@@ -2,6 +2,13 @@
 
 Semver for the skill itself — this file tracks what actually shipped in SKILL.md.
 
+## 0.6.0 — 2026-07-07
+
+Speed release. The Synthicide test filed correctly but took ~5 minutes on a flyer that already carried full event info — most of it on fetches that were never going to succeed.
+
+- **Known fetch-blocked platforms.** ra.co, AXS, and Ticket Tailor 403 every fetch, every test. The skill now skips the fetch for these and corroborates from the search listing directly, with per-field cautions for what the listing can't show. Domains that 403 twice join the list.
+- **Address from results in hand.** The venue's street address is pulled from search results already on screen when the event page doesn't provide it; a dedicated venue search is the last resort, not the default.
+
 ## 0.5.0 — 2026-07-07
 
 - **Calendar by convention, not pinned ID.** Step 8 no longer hardcodes a calendar ID. The skill looks for a calendar named "Event Holds" (case-insensitive, whitespace trimmed) via `list_calendars` and files there; when none exists it files to `primary`, and the report says how to upgrade: create a calendar with that name and future holds file there. A fresh install now works on the first run with zero setup, and the author's personal calendar ID leaves the public spec.
