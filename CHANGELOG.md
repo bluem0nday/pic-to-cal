@@ -1,6 +1,14 @@
 # pic-to-cal — Changelog
 
-Semver for the skill itself. (Separate from BACKLOG.md's roadmap versions, which describe feature *scope* — v0.2 scope, v0.3 eval, etc. This file tracks what actually shipped in SKILL.md.)
+Semver for the skill itself — this file tracks what actually shipped in SKILL.md.
+
+## 0.5.0 — 2026-07-07
+
+- **Calendar by convention, not pinned ID.** Step 8 no longer hardcodes a calendar ID. The skill looks for a calendar named "Event Holds" (case-insensitive, whitespace trimmed) via `list_calendars` and files there; when none exists it files to `primary`, and the report says how to upgrade: create a calendar with that name and future holds file there. A fresh install now works on the first run with zero setup, and the author's personal calendar ID leaves the public spec.
+- **Triggers simplified to intent.** The description's eleven-phrase enumeration is replaced by one rule — an attached image plus any request to put it on the calendar — with a few representative examples ("calendar this", "add to calendar", "save the date", "pencil this in"). Shorter, broader, and the exclusion rules keep their room.
+- **Spec sanitized for publication.** The author's name and personal working-style notes are out of the spec; rules now speak of "the user," and dated test-case attributions keep the date and case name only. Private project-doc references removed.
+- **Relative-time exception to the verbatim block.** A standalone hype line like "TOMORROW" or "LAST CALL" may be dropped from the From-the-flyer block, marked with "[…]" — it's false at read time. The transcription still carries every word. (From the Synthicide test.)
+- **README truth pass.** Tickets reframed to the event's own best link (a sold-out notice seen on the page is carried into the hold, dated); the midnight rule corrected to say holds *start* at 23:59 on the flyer's day; the QR-code claim removed (never specced or tested — the 0.3.0 entry below carries the same correction).
 
 ## 0.4.1 — 2026-07-05
 
@@ -23,7 +31,7 @@ Live-testing session (tests 3–5: Lost Arts open studio, Angelika Twin Peaks do
 
 - **Dedicated calendar.** All HOLDs file to the "Pic to Cal Events" calendar by pinned ID — never primary. Reverses the April primary-calendar decision.
 - **Printed timezone wins.** An explicit timezone in the image is trusted verbatim (platforms localize to the viewer); venue-derivation only applies when nothing is printed.
-- **Source-first lookup.** A URL, QR code, or Instagram handle printed in the image is checked before any web search.
+- **Source-first lookup.** A URL or Instagram handle printed in the image is checked before any web search. (Corrected 2026-07-07: this entry originally claimed QR codes too — QR handling was never specced or tested.)
 - **Body-copy principle.** The HOLD body carries ALL context from the image, and every reference becomes a live link (handles resolved to real profile URLs). The transcription block is backup; the body reads like the invite.
 - **Stacked links.** When the best link isn't a per-event page, include two: the most specific page found plus the venue's main site.
 - **Per-field honesty.** Fields corroborated by only one source get a plain caution line in the body ("⏰ times from organizer email — double-check when you get tickets").
