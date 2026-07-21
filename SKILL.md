@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.6.0
+version: 0.7.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached: if a trigger phrase arrives with no image, ask for one rather than running the skill.
 ---
 
@@ -76,11 +76,19 @@ From the transcription, pull:
 - **Date** — convert to YYYY-MM-DD. If the year is missing (common on Instagram and event flyers — the post date is the context clue), assume the current year. Don't stop to ask. Only flag the date if it's also cropped, garbled, or self-contradictory — a bare missing year is not a low-confidence flag
 - **Start time** and **end time** — 24-hour. A "midnight" screening belongs to the calendar day printed on the flyer. File it at `23:59` on the listed date — that keeps the event on the day the flyer names and in the real late-night slot, instead of jumping to `00:00` the following morning. (For Spectacle, "FRIDAY, MAY 29 – MIDNIGHT" → start `2026-05-29 23:59`. The end time can roll past midnight; a 60-min film ends `2026-05-30 00:59`.) **Try the page before falling back.** When the image is missing a start or end time, don't jump straight to a default — step 5 fetches the event page, so pull the real time from there if a verifiable page exists. Precedence for every time field: image → else verified page → else the fallbacks below. Only use a fallback when neither the image nor a page supplies the value.
 
-If the source gives a start but no end time and no runtime to back one out of, default the end to **2 hours** after the start, and add a line in the body — `No end time or duration found` — so the user knows the end is a placeholder to adjust. It's a HOLD; an approximate block is fine.
+**Missing end time — precedence chain (2026-07-20; a flat 2-hour placeholder reads as false on a club night).** When the image and the event page give a start but no end, work down this list and stop at the first hit. Every derived end time carries a labeled, dated line in the body — a labeled gap beats a confident guess.
+
+1. A close time published for **this exact event** (rare). Use it as-is.
+2. The **venue's posted hours** for that day of week. One search — hours routinely appear in snippets or on the venue's own site. File the end at closing with the short label: `⏱ Ends at venue's [day] close ([time], checked [M/D]) — no end time listed for this event`. This is a lookup, not background knowledge — same footing as resolving a venue address.
+3. No hours findable: a placeholder scaled by start time. Start at 21:00 or later → **4 hours** (a late start is itself image evidence this isn't a 2-hour block); earlier → **2 hours**. Label: `No end time found — [N]-hour placeholder`.
+
+Never hardcode an end from event-type knowledge ("clubs run till 3") — venues vary by night and lineup, and that's model knowledge, not a source.
 
 If the source gives **no time at all — only a date**, don't invent a start time. File the HOLD as an **all-day** event: the thin bar across the top of the day, not a block that reserves 9-to-5 or any other span. Use the connector's `allDay: true`. Add a prominent line in the body — `⏰ No starting time found — filed as all-day banner` — so the user knows why it's a banner and that the time is the thing to look up on click-through. (Timezone doesn't apply to an all-day event, so the venue-TZ logic can be skipped in this case.)
 - **Timezone** — if the image prints an explicit timezone (an IANA name like "America / New_York" or an abbreviation like EST), **trust it verbatim, even when it doesn't match the venue's city** — event platforms localize displayed times to the viewer, so the printed time+zone pair is already correct as a moment in time. Don't "fix" it to venue-local; that shifts the actual hour. (Learned 2026-07-04: a Chicago event displayed as "3:00 PM – 6:00 PM · America / New_York" — the platform had done the conversion; filing it as 3 PM Chicago would have been an hour off.) Only when NO timezone is printed: for a physical event, derive it from the venue's address (Brooklyn → `America/New_York`, San Francisco → `America/Los_Angeles`). That derivation is deterministic — never mark TZ `unknown` when there's an address. The time printed on the flyer is venue-local; store it in the venue's zone and Google Calendar auto-displays it in whatever zone the user is in. If the venue address isn't resolved yet at this step, leave TZ blank and let step 5 fill it once the address is known. Virtual events and the no-address fallback are handled in step 5
 - **Host / speakers** — only people actually appearing **at the event**: the host, an MC, an intro speaker, a Q&A guest, a panel. Names with titles if shown. Do NOT list people who are merely subjects *within the content* — actors in a film, interviewees in a documentary, authors of a book being discussed. Those belong in the synopsis, not as event speakers. (For a CYBERPUNK screening, William Gibson and Timothy Leary are interviewed *in* the 1990 film; they are not speaking at the theater. Some screenings do add a live intro or Q&A speaker — capture that person here if the flyer names one.) If no one is named as appearing live, leave this empty.
+
+  **Lineups: no assumptions about order or type (2026-07-20).** The order of names on a flyer means nothing — who opens, who headlines, and who plays when is in flux at venues of every size, especially with DJs. Never infer set order or billing from layout unless the promoter publishes a roster with start times for this exact event (rare, and even then often not firm). Same for what the names *are*: "artists" is the generic label — a name on a club flyer could be a DJ, a band, or someone on a sequencer. Use a specific word (DJ, band, live PA, singer, performer) only when the image or a checked page prints it — e.g. "LIVE" next to a name.
 - **Location** — physical address if given. If the image names a venue or host but no street address (common on Instagram screenshots), fetch the venue's full street address during step 5 (same web search) and use it. A full address lets Google Calendar geocode the event for maps and travel time. Only use "Virtual" when the event truly has no physical venue
 - **Source platform** — Instagram, X, email, web, photo (infer from screenshot UI)
 
@@ -150,7 +158,7 @@ On any conflict, the page wins. Use the page's value for the calendar event. Don
 
 While you're here, recover the venue's full street address if the image only named a venue or host. The registration page usually lists it; if not, check the results already on screen from the step-4 search first — addresses routinely appear in listing snippets (Yelp, maps, venue directories). Only run a dedicated venue search when the address genuinely isn't already in hand (2026-07-07 speed rule). Carry the full address into the `location` field at step 8 so Google Calendar can geocode it.
 
-**Always check ticket availability while reading the page** (2026-07-05, LIXIL sold-out test). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line directly under the main link in the body — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding.
+**Always check ticket availability while reading the page** (2026-07-05, LIXIL sold-out test). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line in the body's caution block (after Details) — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding.
 
 If the page is unreachable or returns an error, treat this as no page found and proceed to step 6.
 
@@ -168,7 +176,7 @@ Every HOLD lands in exactly one of these. The body of the event records which.
 
 Reserve "verified" for actual corroboration. A link existing is not verification — that's the whole point of the badge.
 
-**Per-field honesty (2026-07-04).** Verification isn't all-or-nothing. When the page corroborates some fields (date, venue) but is silent on another (start time), the badge can still say Verified — but the un-corroborated field gets its own plain-language caution line, prominent in the body, right under the main link. Pattern: `⏰ Start/end times from [the only source] — couldn't be re-confirmed on [what was checked]. Double-check the time when you get tickets.` Silence on a field is not a conflict; it's a gap, and the body says so in words the user's future self will understand at a glance.
+**Per-field honesty (2026-07-04).** Verification isn't all-or-nothing. When the page corroborates some fields (date, venue) but is silent on another (start time), the badge can still say Verified — but the un-corroborated field gets its own plain-language caution line in the body's caution block (after Details). Pattern: `⏰ Start/end times from [the only source] — couldn't be re-confirmed on [what was checked]. Double-check the time when you get tickets.` Silence on a field is not a conflict; it's a gap, and the body says so in words the user's future self will understand at a glance.
 
 ### Step 7: Single confirm before create
 
@@ -211,23 +219,33 @@ Use the Google Calendar `create_event` tool with:
 - **description**: HTML, structured like this. **Formatting caution:** Google Calendar renders *both* `<br>` tags and literal newline characters as line breaks, so never put an actual newline next to a `<br>` in the description string — you'll get double-spacing. Keep each block's markup contiguous (no literal line breaks inside it); use `<br>` alone for a single line break and `<br><br>` for a blank line. Let the `<p>` tags handle spacing *between* sections.
 
 ```html
-<p><b>[action label]:</b> <a href="[URL]">[URL]</a></p>
+<!-- BODY ORDER (2026-07-20, remember-first): the HOLD helps the user remember and decide, not push a purchase. The event's own content leads; the action link sits below it, deliberately. Order: Venue → Details → cautions → summary → action link (+ price) → enrichment → transcription → footer. -->
+<p><b>Venue:</b> [venue name] — <a href="[venue URL]">[venue URL]</a></p>
+<!-- The venue's own site or profile, when the image or a checked page surfaces one. Skip the line when there's no venue URL. -->
+
+<p><b>Details (from the [source]):</b><br>
+<!-- Name the actual source type in the label: "(from the flyer)", "(from the screenshot)", "(from the email)", "(from the text)". "Details" is the generic header; the parenthetical keeps the provenance. -->
+[the event's own description / caption text from the image, copied EXACTLY as written — same wording, same punctuation, same line breaks. Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. The Original transcription block below still keeps every word. No other edits, ever.]</p>
+<!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt; the <pre> transcription below is the raw backup, but the body itself should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
+     ENRICHMENT (2026-07-04): the pages checked in steps 4–5 usually know things the image doesn't — the ticket page's own description, FAQ details (dress code, age limit, accessibility, hardship tickets), the venue's character. Bring the good ones into the body as their own labeled blocks: "From the ticket page:", "From the organizer's FAQ:". The label IS the anti-pollution rule — more context is better, but every block says where it came from, and nothing gets blended into the flyer's own words. -->
+
+<p>[caution lines — ⏰ time judgments, ⏱ derived end times, 🎟 availability — one line each, short, labeled, dated (e.g. "⏰ Doors filed as 11 PM — flyer doesn't say AM/PM"). Omit the paragraph when there are none.]</p>
+
+<p>[One-line plain summary — e.g. "Three rooms, five artists on the lineup." No unsourced labels (see the lineup rule in step 3), no hedge sentences repeating what the labels already say.]</p>
+
+<p><b>Appearing live:</b><br>
+- [Name], [Title]  ← only when it adds people or roles Details doesn't already carry (a talk's Q&A guest, an intro speaker). When Details lists the lineup, omit this block — don't repeat it. Never list film actors, documentary interviewees, or discussed authors here.</p>
+
+<p><b>[action label]:</b> <a href="[URL]">[URL]</a> — [price as printed] (checked [YYYY-MM-DD])</p>
 <!-- Label this link by what the source actually asks of the user — don't hardcode "Register". Most events (a movie, a free show) need no signup, and telling the user to "Register" for a walk-up screening is wrong. Default to the neutral "More info". Switch the label only when the image or page uses an action word:
        tickets / buy tickets  → "Tickets"
        RSVP                    → "RSVP"
        reservation required    → "Reserve"
        register / registration → "Register"
-     Show the literal URL as the visible link text (e.g. https://www.spectacletheater.com/ ), not a friendly title. -->
+     Show the literal URL as the visible link text (e.g. https://www.spectacletheater.com/ ), not a friendly title.
+     PRICE (2026-07-20): quote it exactly as the ticket page prints it ("from $22"), dated, on this line. Never a structured Price field, never a number computed from tiers; when no price is shown anywhere, say nothing. -->
 
-<p><b>From the flyer:</b><br>
-[the event's own description / caption text from the image, copied EXACTLY as written — same wording, same punctuation, same line breaks. Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. The Original transcription block below still keeps every word. No other edits, ever.]</p>
-<!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt; the <pre> transcription below is the raw backup, but the body itself should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
-     ENRICHMENT (2026-07-04): the pages checked in steps 4–5 usually know things the image doesn't — the ticket page's own description, FAQ details (dress code, age limit, accessibility, hardship tickets), the venue's character. Bring the good ones into the body as their own labeled blocks: "From the ticket page:", "From the organizer's FAQ:". The label IS the anti-pollution rule — more context is better, but every block says where it came from, and nothing gets blended into the flyer's own words. -->
-
-<p><b>Appearing live:</b><br>
-- [Name], [Title]  ← only people present AT the event (host, intro, Q&A). Omit this whole block if the flyer names no live speaker. Never list film actors, documentary interviewees, or discussed authors here.</p>
 <p><b>Audience:</b> [audience if visible in image or on page]</p>
-<p><b>Topic:</b> [one-line topic summary]</p>
 <hr>
 <p><b>Original transcription:</b></p>
 <pre>[full transcription from step 1]</pre>

@@ -2,6 +2,30 @@
 
 Semver for the skill itself — this file tracks what actually shipped in SKILL.md.
 
+## 0.7.0 — 2026-07-20
+
+Body redesign release, from a club-flyer test: no end time printed anywhere,
+a multi-room lineup, and a body order that read like a ticket ad.
+
+- **Remember-first body order.** The HOLD is for remembering and deciding,
+  not pushing a purchase. The event's own content leads; the action link sits
+  below it: Venue → Details → cautions → summary → action link → enrichment →
+  transcription → footer. "Details (from the [source])" replaces "From the
+  flyer" as the lead block, naming the actual source type.
+- **End-time precedence chain.** Replaces the flat 2-hour placeholder:
+  a close time published for the exact event (rare) → the venue's posted
+  hours for that day, filed as closing with a dated label → a placeholder
+  scaled by start time (9 PM or later → 4 hours, else 2). Event-type
+  folklore ("clubs run till 3") stays out — every derived end names its source.
+- **No lineup assumptions.** Name order on a flyer carries no meaning; set
+  order and billing stay out unless the promoter publishes a roster with
+  times. "Artists" is the generic label; DJ / band / live PA only when a
+  source prints it.
+- **Price on the action line.** Quoted as the ticket page prints it, dated —
+  never a structured field, never computed from tiers, nothing when not shown.
+- **Short cautions.** Time judgments, derived ends, and availability each get
+  one labeled, dated line in a single caution block after Details.
+
 ## 0.6.0 — 2026-07-07
 
 Speed release. The Synthicide test filed correctly but took ~5 minutes on a flyer that already carried full event info — most of it on fetches that were never going to succeed.
