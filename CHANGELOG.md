@@ -2,6 +2,37 @@
 
 Semver for the skill itself — this file tracks what actually shipped in SKILL.md.
 
+## 0.8.0 — 2026-07-21
+
+Street-poster release: the first real photo of a wheat-pasted flyer — carrying
+TWO events — and field feedback that overturned a day-old rule.
+
+- **Two events, one flyer.** Multiple events printed on the same flyer are all
+  real — the opposite of frame clutter. Transcribe the whole flyer once, ask
+  which to file, then each chosen event becomes its own HOLD with its own
+  confirm, verification, and links.
+- **Fixed 2-hour hold replaces the end-time formulas.** The venue's close is
+  the end only when doors sit within ~5 hours of it — when the event plausibly
+  IS the venue's whole night. Otherwise the hold is a fixed 2 hours, never
+  scaled: not by start time, not by act count, not by event type. Any formula
+  that converts flyer content into a duration smuggles in world-knowledge, and
+  a placeholder that varies "intelligently" reads as information. The caution
+  line declares the convention and carries the real signals as facts; the
+  block under-claims, the label carries the uncertainty.
+- **Source orthography.** Quoted blocks stay character-for-character. Titles
+  keep each name's own spelling — accents, internal caps, spacing — and the
+  primary source wins spelling conflicts. Display caps are typesetting, not
+  spelling: take letter-case from a source that prints the name in running text.
+- **Calendar color, not event color.** Verified by rendering every candidate:
+  the API accepts only colorId 1–11, and the UI's current 24-name palette is
+  unreachable from it. The skill no longer sets a per-event color — HOLDs
+  inherit the Event Holds calendar's own color, a preference the user sets
+  once in the Google Calendar sidebar. (`colorId: "0"` on update resets a
+  stray override from older versions.)
+- **Less clutter in the body.** Printed handles get a bare `@handle - URL`
+  line, no label around it; an action link that repeats a URL already in the
+  body is dropped — one link, once.
+
 ## 0.7.0 — 2026-07-20
 
 Body redesign release, from a club-flyer test: no end time printed anywhere,
