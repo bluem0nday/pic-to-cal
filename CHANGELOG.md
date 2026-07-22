@@ -1,12 +1,18 @@
 # pic-to-cal — Changelog
 
 Semver for the skill itself — this file tracks what actually shipped in SKILL.md.
+Every entry opens in plain English; the bullets underneath carry the technical
+detail.
 
 ## 0.9.0 — 2026-07-22
 
-Browser-fallback release, from a screenshot of an application-gated rooftop
-party: the host's site 403'd every fetch and the run filed Unverified — then
-one browser load verified everything.
+The skill learned to use a browser. Some event sites block automated readers,
+and until now those events filed as "couldn't confirm." The skill now opens
+blocked pages in a real browser, the way a person would, so more holds come
+back verified with the real sign-up link attached. It also searches smarter
+on its second try, and when an event hides its address until an application
+is approved, the hold says exactly that. (Learned from a rooftop party
+screenshot whose site blocked every automated read.)
 
 - **Browser fallback on blocked fetches.** A 403 usually stops only
   server-side fetchers; the in-app browser loads the same page like a normal
@@ -29,8 +35,13 @@ one browser load verified everything.
 
 ## 0.8.0 — 2026-07-21
 
-Street-poster release: the first real photo of a wheat-pasted flyer — carrying
-TWO events — and field feedback that overturned a day-old rule.
+One poster can advertise two shows. A photographed street poster carried two
+concerts at two venues, so the skill now asks which to file and gives each
+its own hold. It also stopped guessing how long events run: with no end time
+printed anywhere, the hold is a flat two hours plus a note that the end is
+unknown, because a guess dressed as a fact misleads more than an honest
+placeholder. Names keep their own spelling, exactly as the artist writes
+them, and hold color now comes from the calendar itself.
 
 - **Two events, one flyer.** Multiple events printed on the same flyer are all
   real — the opposite of frame clutter. Transcribe the whole flyer once, ask
@@ -60,8 +71,11 @@ TWO events — and field feedback that overturned a day-old rule.
 
 ## 0.7.0 — 2026-07-20
 
-Body redesign release, from a club-flyer test: no end time printed anywhere,
-a multi-room lineup, and a body order that read like a ticket ad.
+This release reordered the hold to read the way a reminder should: what the
+event says about itself comes first, and the buy link sits below it. It also
+set rules for missing end times, unlisted set orders, and prices — in every
+case the hold reports what a source actually says and flags what nobody
+knows. (From a club-flyer test with no end time printed anywhere.)
 
 - **Remember-first body order.** The HOLD is for remembering and deciding,
   not pushing a purchase. The event's own content leads; the action link sits
@@ -84,12 +98,20 @@ a multi-room lineup, and a body order that read like a ticket ad.
 
 ## 0.6.0 — 2026-07-07
 
-Speed release. The Synthicide test filed correctly but took ~5 minutes on a flyer that already carried full event info — most of it on fetches that were never going to succeed.
+A speed release. One test filed correctly but took about five minutes, most
+of it waiting on websites that refuse automated readers. The skill now
+recognizes those sites, skips the doomed step, and works from the search
+results it already has.
 
 - **Known fetch-blocked platforms.** ra.co, AXS, and Ticket Tailor 403 every fetch, every test. The skill now skips the fetch for these and corroborates from the search listing directly, with per-field cautions for what the listing can't show. Domains that 403 twice join the list.
 - **Address from results in hand.** The venue's street address is pulled from search results already on screen when the event page doesn't provide it; a dedicated venue search is the last resort, not the default.
 
 ## 0.5.0 — 2026-07-07
+
+The clean-up release that made the skill shareable. It no longer depends on
+the author's personal calendar setup — anyone can install it, and it finds
+an "Event Holds" calendar by name or files to the main calendar and explains
+the upgrade. Personal details left the public text.
 
 - **Calendar by convention, not pinned ID.** Step 8 no longer hardcodes a calendar ID. The skill looks for a calendar named "Event Holds" (case-insensitive, whitespace trimmed) via `list_calendars` and files there; when none exists it files to `primary`, and the report says how to upgrade: create a calendar with that name and future holds file there. A fresh install now works on the first run with zero setup, and the author's personal calendar ID leaves the public spec.
 - **Triggers simplified to intent.** The description's eleven-phrase enumeration is replaced by one rule — an attached image plus any request to put it on the calendar — with a few representative examples ("calendar this", "add to calendar", "save the date", "pencil this in"). Shorter, broader, and the exclusion rules keep their room.
@@ -99,11 +121,21 @@ Speed release. The Synthicide test filed correctly but took ~5 minutes on a flye
 
 ## 0.4.1 — 2026-07-05
 
+A wording fix to one rule: ignore everything in a photo that isn't the
+event's own flyer, wherever the photo was taken.
+
 - **Generalized the ignore-the-frame rule.** 0.4.0 worded the flyer-only transcription rule around pole clutter — misleadingly narrow. The rule is about the photograph's frame in any setting (billboard, subway poster, program on a desk): once the event is identified, everything else in the frame is ignored, without explanation.
 
 ## 0.4.0 — 2026-07-05
 
-Live-testing session (tests 6–8: a Planning Pod registration-page screenshot, a multi-session tarot poster that correctly hit the multi-event guardrail, and a Dom Dolla street poster — first real flyer photo, wrapped around a pole in blackletter type, filed ✓ Verified).
+First real street-poster session, and three lessons stuck: the user approves
+the full invite text before anything is filed, a sold-out notice seen on a
+ticket page is carried into the hold with the date it was seen, and the hold
+contains only what the flyer or a checked page actually says — never the
+model's own trivia. (Tests 6–8: a registration-page screenshot, a
+multi-session tarot poster that correctly hit the multi-event guardrail, and
+a Dom Dolla street poster wrapped around a pole in blackletter type, filed
+✓ Verified.)
 
 - **Confirm shows the full invite.** The step-7 confirm block now includes the complete body, labeled `Description:` (Google Calendar's field name), rendered as it will read on the calendar. Never a header-only confirm.
 - **Availability check.** Every page fetch looks for ticket-availability signals (sold out / waitlist / sales ended / N remaining). When present, a dated caution line goes directly under the main link. Page silence adds nothing.
@@ -114,7 +146,11 @@ Live-testing session (tests 6–8: a Planning Pod registration-page screenshot, 
 
 ## 0.3.0 — 2026-07-04
 
-Live-testing session (tests 3–5: Lost Arts open studio, Angelika Twin Peaks double feature, Midsummer Ball — first ✓ Verified filing).
+The release where holds got their own calendar and the invite body grew up:
+every link printed on a flyer becomes a tappable link in the hold, printed
+timezones are trusted as printed, and anything only one source claims gets
+flagged for double-checking. (Tests 3–5: Lost Arts open studio, Angelika
+Twin Peaks double feature, Midsummer Ball — first ✓ Verified filing.)
 
 - **Dedicated calendar.** All HOLDs file to the "Pic to Cal Events" calendar by pinned ID — never primary. Reverses the April primary-calendar decision.
 - **Printed timezone wins.** An explicit timezone in the image is trusted verbatim (platforms localize to the viewer); venue-derivation only applies when nothing is printed.
@@ -131,7 +167,9 @@ Live-testing session (tests 3–5: Lost Arts open studio, Angelika Twin Peaks do
 
 ## 0.2.0 — 2026-06-25
 
-Film-flyer testing round (two Spectacle Theater flyers).
+Lessons from two movie-theater flyers: how to verify an event against a real
+page and say so honestly, how to file a midnight movie on the right day, and
+how to name events so they're recognizable at a glance.
 
 - Three-state verification (✓ Verified / ⚠ Unverified / ℹ no page found) with source-checkability ranking.
 - Venue timezone derivation; venue-address recovery for geocoding.
@@ -143,5 +181,8 @@ Film-flyer testing round (two Spectacle Theater flyers).
 - Verbatim flyer copy in the body; create→update two-call sequence for the connector's dropped-location bug; HTML double-spacing fix.
 
 ## 0.1.0 — 2026-04-30
+
+The first working version: read the image, check it's really an event, find
+the sign-up page, confirm once, file a hold on the calendar.
 
 First draft. Nine-step workflow: transcribe → event check → extract → search (2 tries max) → fetch & diff (page wins) → no-page fallback → single confirm (yes/no/fix) → create with structured HTML description → one-line report. Trigger contract (image + specific phrases). Scope guardrails.
