@@ -2,6 +2,31 @@
 
 Semver for the skill itself — this file tracks what actually shipped in SKILL.md.
 
+## 0.9.0 — 2026-07-22
+
+Browser-fallback release, from a screenshot of an application-gated rooftop
+party: the host's site 403'd every fetch and the run filed Unverified — then
+one browser load verified everything.
+
+- **Browser fallback on blocked fetches.** A 403 usually stops only
+  server-side fetchers; the in-app browser loads the same page like a normal
+  visitor. When a fetch is blocked and the session has browser tools, the
+  page gets opened there instead of degrading — the first live test turned
+  an Unverified hold into a Verified one and recovered the real apply URL.
+  Sessions without browser tools degrade exactly as before.
+- **Second query changes strategy, not keywords.** Two keyword-shuffles
+  surfaced only the host's homepage while the event page never appeared. The
+  second search now aims at where event pages live — a platform name or the
+  host's own event-URL pattern — and when the host's site is already known,
+  loading it in the browser beats a second blind search.
+- **Gated addresses are a finding, not a failure.** Application-screened
+  events publish the address only after approval ("Address Info: Available
+  after application approval"). File the city, quote the gate in a dated 📍
+  caution, and don't burn searches on an address that isn't public.
+- **Emphasis survives the copy.** The Details block keeps the source's own
+  bolds as `<b>` — same wording, same punctuation, same line breaks, same
+  emphasis.
+
 ## 0.8.0 — 2026-07-21
 
 Street-poster release: the first real photo of a wheat-pasted flyer — carrying
