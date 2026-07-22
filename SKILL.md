@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.8.0
+version: 0.9.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached: if a trigger phrase arrives with no image, ask for one rather than running the skill.
 ---
 
@@ -117,7 +117,7 @@ The image often names its own source — posters print URLs, ticket-site names, 
 If the image gave no lead, or the printed lead is dead or unrelated, fall back to web search. Up to two attempts.
 
 - First query: build from event title + host + date (e.g. `"AI Strategy Summit" Section School June 4 2026`)
-- If the first query returns nothing useful, try a second with different keywords (drop the date, add the speaker name, or add "registration")
+- If the first query returns nothing useful, the second changes strategy, not just keywords (2026-07-22, AI Tinkerers test: two keyword-shuffles both surfaced only the host's homepage; the event page never appeared). Aim the second query at where event pages live: add a platform name (Luma, Eventbrite, Partiful, Resident Advisor, Dice) or the host's own event-URL pattern when the first search revealed one (a sibling event at `host.org/p/<slug>` means this event has a `/p/` page too — search for it, don't guess it). And when the host's site is already known but the event page isn't surfacing, skip the second search entirely: load the host's site in the browser (step 5's fallback) and find the event link on the page.
 
 What counts as "useful": a result on the host's own domain, an Eventbrite/Luma/Hopin page run by the host, or a clearly official landing page. Skip aggregator pages, news articles about the event, or the host's homepage.
 
@@ -144,6 +144,8 @@ If a registration URL was found, fetch it. Compare the page to the image transcr
 
 **Known fetch-blocked platforms — don't spend a fetch on them (2026-07-07 speed rule; a complete flyer took ~5 minutes, mostly on doomed fetches).** ra.co, AXS, and Ticket Tailor have returned 403 to every fetch attempt across tests. When the best source is on one of these, skip the fetch: corroborate from the search listing itself (the title carries event, venue, and date) and use the listing URL as the link, with the per-field caution on anything the listing doesn't show (times, usually). If another domain 403s in two different runs, treat it the same way.
 
+**Browser fallback on blocked fetches (2026-07-22, AI Tinkerers rooftop test).** A 403 usually stops only server-side fetchers — the in-app browser loads the same page like a normal visitor. When a fetch 403s, or the domain is on the blocked list above, and the session has browser tools: open the page in the browser and read it there instead of degrading. One page load can do what the search couldn't — surface the event page from the host's homepage, verify every field, and recover the real apply/tickets URL. The first live test turned an Unverified hold into a Verified one; the only fact it couldn't recover was gated on purpose (see gated addresses below). When the session has no browser tools, fall back to the old rule: corroborate from the search listing and caution the gaps.
+
 **Timezone: printed beats derived.** A timezone printed in the image or on the page wins as-is (platforms localize to the viewer — see step 3). When nothing is printed, resolve from the venue: for a physical event, the timezone is the venue's. Get the address (from the page or one venue search) and map it to its IANA zone: Brooklyn → `America/New_York`, San Francisco → `America/Los_Angeles`, Chicago → `America/Chicago`. The printed start time is venue-local. For a **virtual** event with no physical address: use the TZ printed on the flyer or page if shown; if none is shown, fall back to the user's home timezone — read it from their primary calendar via `list_calendars`. Either way, Google Calendar displays the event in the user's current local time automatically, so they always see it relative to themselves while the stored moment stays correct for the venue. No need to flag TZ as low-confidence when there's an address.
 
 If every field matches (allowing for small text differences like "Thursday Jun 4" vs "June 4, 2026"), say nothing — go straight to step 7. Don't show a comparison block when there's nothing to look at.
@@ -161,6 +163,8 @@ Image vs. registration page:
 On any conflict, the page wins. Use the page's value for the calendar event. Don't ask the user to choose.
 
 While you're here, recover the venue's full street address if the image only named a venue or host. The registration page usually lists it; if not, check the results already on screen from the step-4 search first — addresses routinely appear in listing snippets (Yelp, maps, venue directories). Only run a dedicated venue search when the address genuinely isn't already in hand (2026-07-07 speed rule). Carry the full address into the `location` field at step 8 so Google Calendar can geocode it.
+
+**Gated addresses (2026-07-22, AI Tinkerers test).** Application-screened events publish the address only after approval — the page says so outright ("Address Info: Available after application approval"). That's a finding, not a failure: no search recovers a gated address, so don't burn queries on it. File `location` as the city (e.g. "New York, NY") and add a dated 📍 caution quoting the gate, so the user knows the address arrives with their approval.
 
 **Always check ticket availability while reading the page** (2026-07-05, LIXIL sold-out test). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line in the body's caution block (after Details) — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding.
 
@@ -229,7 +233,7 @@ Use the Google Calendar `create_event` tool with:
 
 <p><b>Details (from the [source]):</b><br>
 <!-- Name the actual source type in the label: "(from the flyer)", "(from the screenshot)", "(from the email)", "(from the text)". "Details" is the generic header; the parenthetical keeps the provenance. -->
-[the event's own description / caption text from the image, copied EXACTLY as written — same wording, same punctuation, same line breaks. Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. The Original transcription block below still keeps every word. No other edits, ever.]</p>
+[the event's own description / caption text from the image, copied EXACTLY as written — same wording, same punctuation, same line breaks, same emphasis (lead-ins the image bolds stay <b> in the HTML; 2026-07-22). Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. The Original transcription block below still keeps every word. No other edits, ever.]</p>
 <!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss; format as its own bare line `@handle - [profile URL]`, no "More info" label wrapping it — the label was clutter, 2026-07-21), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt; the <pre> transcription below is the raw backup, but the body itself should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
      ENRICHMENT (2026-07-04): the pages checked in steps 4–5 usually know things the image doesn't — the ticket page's own description, FAQ details (dress code, age limit, accessibility, hardship tickets), the venue's character. Bring the good ones into the body as their own labeled blocks: "From the ticket page:", "From the organizer's FAQ:". The label IS the anti-pollution rule — more context is better, but every block says where it came from, and nothing gets blended into the flyer's own words. -->
 
@@ -287,9 +291,10 @@ That's it. Don't summarize what was done. Don't list the description fields back
 - **Native image reading** — for step 1
 - **WebSearch** — for step 4
 - **web_fetch** — for step 5
+- **In-app browser** (read-only page loads) — step 5's fallback when a fetch is blocked, and step 4's shortcut when the host's site is known but the event page isn't in search results. Optional: not every session has browser tools; without them, degrade as steps 4–5 describe.
 - **Google Calendar `create_event`** + **`update_event`** (MCP connector) — for step 8. Filing always takes both calls: `create_event` to make the HOLD, then `update_event` to set `location` (the connector reliably drops location on create). `list_calendars` is also used to resolve the destination calendar by name (step 8) and to read the user's home timezone for virtual events with no printed TZ.
 
-That's the full toolkit. If a tool is unavailable, stop and say which one is missing — don't try to work around it.
+That's the full toolkit. The browser is the one optional tool; every other tool is required — if a required tool is unavailable, stop and say which one is missing, don't try to work around it.
 
 ## Working style for this skill
 
