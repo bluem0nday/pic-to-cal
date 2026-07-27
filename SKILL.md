@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.9.0
+version: 0.10.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached: if a trigger phrase arrives with no image, ask for one rather than running the skill.
 ---
 
@@ -128,7 +128,9 @@ What counts as "useful": a result on the host's own domain, an Eventbrite/Luma/H
 3. The host's schedule or calendar page (including a PDF).
 4. The host's homepage or social profile (Instagram, etc.).
 
-The further down this list, the more likely the result lands at "unverified." Login-walled pages (Facebook events, most Instagram posts) can't be read, so they never count as verification even when they're the source.
+The further down this list, the more likely the result lands at "unverified." Login-walled pages (Facebook events, most Instagram posts) never count as verification even when they're the source.
+
+**A login wall means "can't verify," not "can't read" (2026-07-25, Brooklyn block party test).** A plain fetch of an Instagram post gets a login screen; a renderer often gets the real page. The in-app browser loaded a public post as a logged-out visitor and returned the organizer's full caption, the tagged accounts, and the comments — which carried the price and seven artist handles the flyer never printed. So when the source is walled and the runtime can render a page, open it and read it. Everything it returns is enrichment: a walled source never earns the ✓ badge, and nothing load-bearing may rest on it — the hold has to be right without it. Logged-out rendering is inconsistent, so when the render returns a login screen, degrade and move on. Same shape as the 403 rule in step 5: the capability is optional, the hold is not.
 
 **Venues without per-event pages.** Not every host publishes a page per event. Indie microcinemas, bookstores, and small music venues often run low-tech: a single monthly schedule, sometimes only a downloadable PDF calendar they remake each month. Bigger venues (theaters, ticketed concerts, author events) usually do have per-event pages — try for those first. When no per-event page exists, fall back to the venue's schedule or calendar page (including a PDF) and verify the date against it. Use that schedule URL as the embedded link — not a guessed per-event URL, and not the bare homepage if a real schedule page exists. If the event date is already past, the venue may have replaced that month's schedule with the current one; if so, the date can't be re-verified — note it and move on.
 
@@ -291,10 +293,24 @@ That's it. Don't summarize what was done. Don't list the description fields back
 - **Native image reading** — for step 1
 - **WebSearch** — for step 4
 - **web_fetch** — for step 5
-- **In-app browser** (read-only page loads) — step 5's fallback when a fetch is blocked, and step 4's shortcut when the host's site is known but the event page isn't in search results. Optional: not every session has browser tools; without them, degrade as steps 4–5 describe.
+- **In-app browser** (read-only page loads) — step 5's fallback when a fetch is blocked, step 4's shortcut when the host's site is known but the event page isn't in search results, and step 4's reader for login-walled sources. Optional: not every session has browser tools; without them, degrade as steps 4–5 describe.
 - **Google Calendar `create_event`** + **`update_event`** (MCP connector) — for step 8. Filing always takes both calls: `create_event` to make the HOLD, then `update_event` to set `location` (the connector reliably drops location on create). `list_calendars` is also used to resolve the destination calendar by name (step 8) and to read the user's home timezone for virtual events with no printed TZ.
 
 That's the full toolkit. The browser is the one optional tool; every other tool is required — if a required tool is unavailable, stop and say which one is missing, don't try to work around it.
+
+### What breaks when a capability is missing
+
+This spec is also the spec for a phone app, and the phone won't have the same tools (2026-07-25). So every capability states what happens without it. The rule: **a missing capability costs detail, never correctness.** A hold filed without any of the optional rungs is still a correct hold — right date, right place, a link back — it just carries less.
+
+| Capability | Without it |
+|---|---|
+| Image reading | Nothing works. Required. |
+| Web search | No source page, so no verification. Every hold files as ℹ no-page-found from the image alone. Still a valid hold. |
+| Page fetch | Search-listing titles become the only corroboration: date and venue usually survive, times usually don't and get a per-field caution. |
+| Page rendering (browser) | Blocked and login-walled pages are unreadable. Enrichment is lost — price, captions, handles, FAQ detail. Verification against an unblocked page is unaffected. |
+| Calendar write | Nothing files. Required — stop and say so. |
+
+Two rules follow from the table, and they hold in any runtime. Verification is never assumed: absent proof, the hold says so in words rather than filing a confident-looking guess. And enrichment is never load-bearing: if a block of body copy would change the date, time, or place, it isn't enrichment — it belongs to verification and needs a readable source.
 
 ## Working style for this skill
 

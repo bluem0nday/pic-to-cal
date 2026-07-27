@@ -4,6 +4,34 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.10.0 — 2026-07-25
+
+A locked door is not a blank wall. Instagram and Facebook show a login screen
+to automated readers, so the skill used to treat those posts as unreadable and
+move on. A real browser sees the post the way anyone scrolling past would — so
+now the skill looks, and the extra detail comes back with the hold: the price,
+the organizer's own words, the artist handles the flyer left off. What it finds
+there still can't verify anything, because a page behind a login isn't proof.
+This release also writes down what the skill loses when a tool is missing,
+which matters because the phone version won't have the same ones.
+
+- **A login wall means "can't verify," not "can't read."** When the source is
+  login-walled and the runtime can render a page, open it and read it. Every-
+  thing it returns is enrichment: a walled source never earns the ✓ badge and
+  nothing load-bearing may rest on it. Logged-out rendering is inconsistent —
+  a login screen means degrade and move on. (Learned from a Brooklyn block
+  party flyer whose Instagram post carried the price and seven artist handles
+  the flyer never printed.)
+- **The degradation contract is now written down.** One table naming each
+  capability and what breaks without it, plus the rule underneath: a missing
+  capability costs detail, never correctness. A hold filed with none of the
+  optional rungs is still a correct hold — right date, right place, a link
+  back — it just carries less.
+- **Two rules that hold in any runtime.** Verification is never assumed: with
+  no proof, the hold says so instead of filing a confident-looking guess. And
+  enrichment is never load-bearing: if a block of body copy would change the
+  date, time, or place, it isn't enrichment.
+
 ## 0.9.0 — 2026-07-22
 
 The skill learned to use a browser. Some event sites block automated readers,
