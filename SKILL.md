@@ -1,12 +1,12 @@
 ---
 name: pic-to-cal
-version: 0.10.0
-description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. An image MUST be attached: if a trigger phrase arrives with no image, ask for one rather than running the skill.
+version: 0.11.0
+description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. Also trigger on an event-page URL with no image, when the URL is paired with a filing ask — "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. An image or an event URL MUST be present: if a trigger phrase arrives with neither, ask for one rather than running the skill.
 ---
 
 # pic-to-cal
 
-Take an attached event image, find the official registration URL, and create a HOLD on the "Event Holds" Google Calendar (or the primary calendar when no "Event Holds" calendar exists — see step 8) so it doesn't get lost. Both `pic-to-cal` and `pic to cal` are correct names for the skill.
+Take an attached event image — or an event-page URL — find the official registration URL, and create a HOLD on the "Event Holds" Google Calendar (or the primary calendar when no "Event Holds" calendar exists — see step 8) so it doesn't get lost. Both `pic-to-cal` and `pic to cal` are correct names for the skill.
 
 ## Why this skill exists
 
@@ -18,19 +18,31 @@ The HOLD is intentionally low-commitment — it goes on the calendar before the 
 
 The single-image, single-day case. Find the registration URL via web search and use it to verify the facts in the image. If the search fails, file the HOLD anyway and flag the description as unverified.
 
+Also in scope since v0.11.0 (2026-07-28): **URL-only input** — the user hands an event-page link instead of an image. Same protocol, cheaper path: the page is the source, so there's nothing to search for, and instead of a verification badge the hold ends with a plain promise — all facts from this page, nothing added. This is the iOS share-intent app's primary path — a share sheet delivers URLs more often than images.
+
 ## What's out of scope (do not build)
 
 Multi-day events, dedup checks, recurring detection, T-2 re-verification, eval/QA checks, RSVP actions, email actions, scheduled tasks, first-run setup. Those are later versions. If a user request implies one of these, say so and stop — don't improvise.
 
 ## Trigger contract
 
-Required:
-- An image is attached to the user's message
-- The user's message contains one of the trigger phrases (see the description field above)
+Two kinds of input start the workflow (URL input added 2026-07-28, Test 16 — three Film Forum pages filed clean; the iOS share-intent app receives URLs more often than images, so this is the app's primary path, not a bolt-on).
 
-If the user types a trigger phrase with no image attached, do not start the workflow. Reply: "I need the image attached to the message — can you re-send with the screenshot?"
+**Image input** — the original case:
+- An image is attached to the user's message
+- AND the message contains one of the trigger phrases (see the description field above)
+
+**URL input:**
+- The message contains one or more event-page URLs
+- AND a trigger phrase or an explicit filing instruction in any phrasing ("put a hold for this", "calendar this link", "pic to cal this URL")
+
+A bare pasted URL with no ask does NOT trigger — same reasoning as image-with-no-phrase: the user may be doing something else with it. Several URLs in one message = one HOLD per URL, each with its own body and report (same shape as two-events-on-one-flyer, 2026-07-21).
+
+If a trigger phrase arrives with neither an image nor a URL, do not start the workflow. Reply: "I need the image or an event-page link attached — can you re-send?"
 
 If an image is attached but the message contains no trigger phrase, do not start the workflow. The user is using a different skill or talking conversationally.
+
+**What URL input changes downstream (map, details in each step):** step 1 captures the fetched page word for word instead of transcribing pixels; most of steps 4–6 doesn't apply (the URL is the source — no search); the verification footer becomes the nothing-added promise (see "Verification status"); everything else — body structure, sourcing rules, calendar mechanics — runs unchanged.
 
 ## The workflow
 
@@ -54,6 +66,8 @@ Show the user the full transcription before doing anything else. Format:
 Transcription:
 [every line of text from the image, in roughly the order it appears]
 ```
+
+**URL input: fetch, don't transcribe (2026-07-28, Test 16).** For a URL, step 1 is one fetch of the page, captured verbatim — the page text plays the transcription's role everywhere downstream. Three rules: (1) Fetch summarizers paraphrase — request the event's own description character-for-character, and if what comes back reads like a summary rather than a quote, re-fetch demanding exact reproduction (Test 16: two of three blurbs came back paraphrased on the first pass; only explicit "word for word, with original punctuation" instructions returned the real text). (2) The frame rule applies to pages too: capture the event's own content, not site chrome, navigation, or other events listed on the page. (3) Skip the transcription display — the user sent the page, they can open it — and the body carries no `<pre>` transcription block; the Source link replaces it.
 
 ### Step 2: Decide if this is actually an event
 
@@ -83,8 +97,9 @@ From the transcription, pull:
 **Missing end time — the hold is a convention, not a prediction (2026-07-20; revised 2026-07-21 after a 7 PM–4 AM block over-claimed a bar-venue show: the venue's close answers "when does the building shut," not "when does the show end").** When the image and the event page give a start but no end, work down this list and stop at the first hit. Every derived end time carries a labeled, dated line in the body.
 
 1. A close time published for **this exact event** (rare). Use it as-is.
-2. The **venue's posted hours** for that day — but ONLY when doors sit within ~5 hours of close, i.e. the event plausibly IS the venue's whole night (an 11 PM club program running to the 4 AM close). One search — hours routinely appear in snippets. Label: `⏱ Ends at venue's [day] close ([time], checked [M/D]) — no end time listed for this event`. When doors are further from close, the close time is context, not the end — it moves into the caution line and the block does not stretch to it.
-3. Otherwise: a **fixed 2-hour hold. Always.** Never scale it — not by start time, not by act count, not by event type. Any formula that converts flyer content into a duration smuggles in world-knowledge (how long sets, readings, or signings run — the flyer can't say), and a placeholder that varies "intelligently" starts to look like information, which readers will trust. A uniform convention is honest because it carries no false signal: the user learns once that a 2-hour hold with a ⏱ line means "end unknown." The caution line declares the convention and carries the real signals as facts, never converted into a number: `⏱ End unknown — the 2-hour hold is a placeholder, not a prediction; venue open till [time] [day] (checked [M/D])` (or `; venue posts no regular hours`).
+2. A **published running time for this exact event** — a film's minutes, listed lengths of the program's parts (2026-07-28, Test 16: three Film Forum screenings). End = start + the listed runtimes summed (feature + accompanying short/doc). Label: `⏱ End derived from the listed approx. [N]-min runtime — no allowance for trailers or an intro; may run later (checked [M/D])`. This stays on the right side of rung 4's no-formula ban because runtime is a per-event published fact, not world-knowledge — the source printed the number; nothing was inferred from event type. An announced live intro/Q&A with no listed length stays a caution ("may push the end later"), never a number.
+3. The **venue's posted hours** for that day — but ONLY when doors sit within ~5 hours of close, i.e. the event plausibly IS the venue's whole night (an 11 PM club program running to the 4 AM close). One search — hours routinely appear in snippets. Label: `⏱ Ends at venue's [day] close ([time], checked [M/D]) — no end time listed for this event`. When doors are further from close, the close time is context, not the end — it moves into the caution line and the block does not stretch to it.
+4. Otherwise: a **fixed 2-hour hold. Always.** Never scale it — not by start time, not by act count, not by event type. Any formula that converts flyer content into a duration smuggles in world-knowledge (how long sets, readings, or signings run — the flyer can't say), and a placeholder that varies "intelligently" starts to look like information, which readers will trust. A uniform convention is honest because it carries no false signal: the user learns once that a 2-hour hold with a ⏱ line means "end unknown." The caution line declares the convention and carries the real signals as facts, never converted into a number: `⏱ End unknown — the 2-hour hold is a placeholder, not a prediction; venue open till [time] [day] (checked [M/D])` (or `; venue posts no regular hours`).
 
 The block should under-claim; the caution line carries the uncertainty and any known upper bound. An end that's modestly wrong-short beats one dramatically wrong-long — the user can stay later than the block, but a block that colonizes the whole evening misleads planning at a glance. Never hardcode an end from event-type knowledge ("clubs run till 3") — venues vary by night and lineup, and that's model knowledge, not a source.
 
@@ -108,6 +123,14 @@ If a key field looks ambiguous in the image — date is half-cropped, two times 
 Wait for the user's reply before moving on.
 
 ### Step 4: Find the official registration page
+
+**URL input: most of steps 4–6 doesn't apply (2026-07-28, Test 16).** The user's URL IS the source page — no search, no ladder, no no-page-found state. Three rules cover what's left:
+
+1. **If the page won't load** (fetch fails and the browser fallback fails), stop and tell the user — don't file. Unlike the image flow there's no fallback data; a hold needs at least one readable source.
+2. **What still runs from step 5:** read the page for everything the body needs, not just ticketing — don't assume the URL is a ticketed event with perfect information (2026-07-28, the protest-march counterexample: free, unticketed, no lineup — the organizer's own site and handles are the best links on the page). Recover the street address or meeting point and timezone; per step 8's principle, every reference the page prints becomes a live link — organizer site, handles, venue, FAQ. Label the action link by what the page actually asks (Tickets / RSVP / Register / plain "More info" — never invent a buy step for an unticketed event); when a more specific action URL exists than the one the user sent, it takes the action line and the user's URL stays as Source. Availability check and price only when the event is ticketed, quoted as printed.
+3. **Multi-showtime pages.** A run of screenings or a series page often lists several dates/times. Exactly one showtime → file it. Several → one question: which one(s)? Each chosen showtime becomes its own HOLD (same shape as multi-event-flyer, 2026-07-21). If the user's message already named a date or time, use it — no question.
+
+Everything from here to the end of step 6 is the image flow.
 
 The image often names its own source — posters print URLs, ticket-site names, and Instagram handles. Check those before reaching for web search:
 
@@ -176,9 +199,11 @@ If the page is unreachable or returns an error, treat this as no page found and 
 
 If neither search attempt returned a usable URL, or if the page wouldn't load, continue to step 7 with no URL. The HOLD will get a "no source found" flag in the description. Don't ask whether to proceed — the locked decision is auto-skip after two tries.
 
-### Verification status — three states
+### Verification status — three states (image input) or the nothing-added promise (URL input)
 
-Every HOLD lands in exactly one of these. The body of the event records which.
+**URL input: a promise instead of a badge (2026-07-28, Test 16).** When the user hands over the event page itself, there's nothing to verify against — the page can't disagree with itself, and a ✓ badge would just be for show. The three states below apply to image input only. A URL-filed HOLD instead ends with a plain promise: everything in this body comes from the page, and nothing else. Footer: `<p><i>Filed from <a href="[URL]">[URL]</a> on [YYYY-MM-DD] — all facts from this page; nothing added.</i></p>` The risk on this path isn't misreading — pages are clean text — it's the model adding things: commentary, background knowledge, or the user's own life as "context" (the slip that earned this rule: a family-travel note added to a hold body as helpful context, caught by the user the same day). The promise has to actually hold: every fact comes from the page or a page it links (venue site, ticket page), quoted under the exact-copy rule. Anyone who opens the URL should be able to find every fact in the body; anything they can't find is a mistake, not a judgment call. The skill can't make additions impossible — it can make them easy to spot and against the rules. Per-field honesty still applies: when the page leaves out something the HOLD needs (usually the end time), the derived value is labeled and dated exactly as in the image flow.
+
+**Image input — every HOLD lands in exactly one of these three states.** The body of the event records which.
 
 - **✓ Verified** — found a public, no-login event page (see the source ranking in step 4) AND its date and time match the image. List the URL. On a conflict the page wins and it still counts as verified — against the page. Don't gate on the title matching; titles vary ("CYBERPUNK" vs "Cyberpunk (1990)").
 - **⚠ Unverified** — a link exists but it didn't confirm the facts: a venue homepage, a monthly schedule, or a login-walled page that can't be read. Always include the best available link — the next-highest rung on the step-4 ladder — because the link has two jobs and verification is only one of them. Even when it verifies nothing, it's the user's starting point for finding out more about the event, venue, or organizer (the Lost Arts test: the exact event page was members-only, but lostarts.xyz still gets them to the community). A HOLD with no link at all should only happen when the image and two searches produced literally nothing.
@@ -210,11 +235,17 @@ Schedule it? (yes / no / fix)
 - no → stop, don't create
 - fix → ask which field, edit, re-show summary, ask again
 
+**URL input: skip the confirm when the ask already answered it (2026-07-28, Test 16).** All three conditions, or the confirm shows as written: (1) URL input; (2) the user's message clearly says to file it ("put a hold for this on my calendar"), not a hedged ask ("what do you think about this event?"); (3) exactly one showtime resolved, no low-confidence field, no question pending. Then file directly and report — the ask was the yes, and re-asking it is friction (Test 16 filed three holds this way; the user corrected after via the report, which worked). The guest check (step 8) still runs — it doesn't depend on a human looking. The past-date courtesy below still asks even on this path: a past date on a series page is likelier a surprise than a choice.
+
 **Past dates don't matter.** A date in the past is not an error and not noise — the data is the data — old flyers file the same as upcoming ones. The only courtesy: if the resolved date is already past, add one neutral line to the confirm — `Heads up: this date is already past. Still schedule it? (yes / no)` — then proceed on yes. Don't moralize, don't refuse, don't call it noise.
 
 ### Step 8: Create the calendar event
 
 **Sourcing rule for everything in the invite (2026-07-05):** every fact traces to the image or a page checked during this run. Never add background knowledge — genre labels, artist facts, venue lore — no matter how confident. If it isn't in a source the user can open, it doesn't go in. (The cut that set the rule: "house/dance" as a genre gloss on a Dom Dolla show — true, but sourced from the model, not the flyer or pages.) Synthesis lines like Topic re-say the sources' own words, nothing more. The only exception: resolving a named venue to its standard street address for geocoding — that's plumbing, not content.
+
+**The user's life is not a source — and neither is their calendar (2026-07-28).** HOLDs get forwarded to friends; the body carries nothing about the user. No family, travel, health, or schedule context, and nothing read from the calendar (nearby events, past invites, who's in town) — even when it's why the hold exists. That belongs in the chat reply. Calendar read access is for filing mechanics only (destination, timezone). (Set by a real cut: a family-visit note with flight details, sourced from a nearby calendar event.)
+
+**Guest check — always the last step before creating the event, even on runs that skip the confirm (2026-07-28).** Reread the finished body as if you're a friend who just received the invite, and ask two things: is everything in it on the event's own page (or image)? Is any of it about the user? The answers must be **yes** and **no**, or the failing line gets deleted — not reworded. This is the same reread the user does before forwarding a hold to a friend.
 
 Use the Google Calendar `create_event` tool with:
 
@@ -290,9 +321,9 @@ That's it. Don't summarize what was done. Don't list the description fields back
 
 ## Tools this skill uses
 
-- **Native image reading** — for step 1
-- **WebSearch** — for step 4
-- **web_fetch** — for step 5
+- **Native image reading** — for step 1, image input (URL input never needs it)
+- **WebSearch** — for step 4, image input (URL input skips the search entirely)
+- **web_fetch** — for step 5; on URL input it's also step 1 (the page IS the source) and becomes required
 - **In-app browser** (read-only page loads) — step 5's fallback when a fetch is blocked, step 4's shortcut when the host's site is known but the event page isn't in search results, and step 4's reader for login-walled sources. Optional: not every session has browser tools; without them, degrade as steps 4–5 describe.
 - **Google Calendar `create_event`** + **`update_event`** (MCP connector) — for step 8. Filing always takes both calls: `create_event` to make the HOLD, then `update_event` to set `location` (the connector reliably drops location on create). `list_calendars` is also used to resolve the destination calendar by name (step 8) and to read the user's home timezone for virtual events with no printed TZ.
 
@@ -304,9 +335,9 @@ This spec is also the spec for a phone app, and the phone won't have the same to
 
 | Capability | Without it |
 |---|---|
-| Image reading | Nothing works. Required. |
-| Web search | No source page, so no verification. Every hold files as ℹ no-page-found from the image alone. Still a valid hold. |
-| Page fetch | Search-listing titles become the only corroboration: date and venue usually survive, times usually don't and get a per-field caution. |
+| Image reading | Image input can't run. Required for images; URL input is unaffected (2026-07-28). |
+| Web search | No source page for image input, so no verification — every image hold files as ℹ no-page-found. Still a valid hold. URL input never needs search. |
+| Page fetch | Image input: search-listing titles become the only corroboration — date and venue usually survive, times usually don't and get a per-field caution. URL input: can't run at all — the page is the only source, so stop and say so (step 4). |
 | Page rendering (browser) | Blocked and login-walled pages are unreadable. Enrichment is lost — price, captions, handles, FAQ detail. Verification against an unblocked page is unaffected. |
 | Calendar write | Nothing files. Required — stop and say so. |
 
