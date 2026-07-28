@@ -6,53 +6,53 @@ detail.
 
 ## 0.11.0 — 2026-07-28
 
-A link works as well as a picture. Hand the skill an event page's URL with a
-"put a hold on this" and it files the same hold — no screenshot needed. The
-page is the source, so there's nothing to verify it against; instead of a
-verification badge, a URL-filed hold makes a plain promise: everything in
-the body comes from the page, and nothing else. This release also adds a final
-reread before any hold is filed, after a real slip: a note about the user's
-family travel ended up in a hold body as helpful context. Holds get
-forwarded to friends, so the last thing the skill now does is reread the
-invite the way a friend receiving it would — nothing in it about the user,
-and everything in it checkable on the event's own page.
+Paste a link, get a hold. Hand the skill an event page's URL with "put a
+hold on this" and it creates the same calendar hold.
+No screenshot needed. There's nothing to check a page against, so no
+verification badge. Instead, the calendar hold confirms that everything in
+it came from the web page, and nothing additional was added by AI. Also
+new: a final reread before any hold is created, after a real slip left a
+family-travel note in one. Holds may get forwarded to friends, so the skill
+rereads each one the way a friend receiving it would. Nothing about the
+user's account or calendar. Every fact is re-checkable on the event's page.
 
 - **A URL can now start the skill.** An event-page URL plus a filing ask
-  starts the workflow; a bare pasted URL does not. Several URLs = one hold
+  starts the workflow. A bare pasted URL does not. Several URLs file one hold
   each. If a trigger phrase arrives with neither image nor URL, ask. (Test 16:
   three Film Forum pages filed clean this way.)
 - **A plain promise replaces the verification badge on URL input.** The
   page can't disagree with itself, so ✓/⚠/ℹ are image-input states. A
   URL-filed hold ends with: "Filed from [URL] on [date] — all facts from
-  this page; nothing added." The risk on this path isn't misreading, it's the
-  model adding things; the promise makes additions easy to catch — open the
-  page, find every fact, anything you can't find is a mistake.
+  this page; nothing added." The risk on this path isn't misreading. It's the
+  model adding things. The promise makes additions easy to catch: open the
+  page and find every fact. Anything you can't find is a mistake.
 - **Nothing about the user goes in the invite.** Not their family, travel,
-  health, or schedule, and nothing pulled from other events on their
-  calendar — even when that's the reason for the hold. Say it in chat
-  instead. Before filing, always reread the invite as if you're a friend who
-  just received it: everything in it should be on the event's own page, and
-  none of it should be about the user. Anything that fails that test gets
-  deleted, not reworded.
-- **Most of steps 4–6 doesn't apply to URLs.** No search, no ladder. If the page won't
-  load even in the browser, stop — there's no fallback data. The page is read
-  for everything the body needs, not just ticketing (a free protest march has
-  no tickets; the organizer's site and handles are the best links). Action
-  link labeled by what the page asks — never invent a buy step. Multi-showtime
-  pages: one showtime files; several = one question; a date named in the
-  user's ask needs no question.
-- **Verbatim capture rule.** Fetch summarizers paraphrase — the event's own
-  description must be requested character-for-character and re-fetched if it
-  comes back as a summary (two of three Test 16 blurbs did).
+  health, or schedule. Nothing pulled from other events on their calendar,
+  even when that's the reason for the hold. Say it in chat instead. Before
+  filing, always reread the invite as if you're a friend who just received
+  it. Everything in it should be on the event's own page. None of it should
+  be about the user. Anything that fails that test gets deleted, not
+  reworded.
+- **Most of steps 4–6 doesn't apply to URLs.** No search, no ladder. If the
+  page won't load even in the browser, stop. There's no fallback data. The
+  page is read for everything the invite needs, not just ticketing (a free
+  protest march has no tickets; the organizer's site and handles are the
+  best links). The action link is labeled by what the page asks. Never
+  invent a buy step. Multi-showtime pages: one showtime files; several mean
+  one question; a date named in the user's ask needs no question.
+- **Verbatim capture rule.** Fetch summarizers paraphrase. The event's own
+  description must be requested character-for-character, and re-fetched if
+  it comes back as a summary (two of three Test 16 blurbs did).
 - **Confirm skipped when the ask already answered it.** URL input + a clear
   file-it instruction + exactly one clean showtime = file directly and report.
   Anything less shows the confirm. Past dates still get the heads-up question.
 - **Published runtime joins the end-time chain** (both input types), as rung 2
-  of 4: end = start + the listed runtimes summed, ⏱-labeled, above venue-hours
-  and the 2-hour fallback — legal because the source printed the number.
+  of 4. End = start + the listed runtimes summed, ⏱-labeled. It sits above
+  venue-hours and the 2-hour fallback. Legal because the source printed the
+  number.
 - **Degradation table updated per input type.** Image reading and web search
-  are image-input rows; page fetch is required for URL input (no page, no
-  hold — stop and say so).
+  are image-input rows. Page fetch is required for URL input (no page, no
+  hold; stop and say so).
 
 ## 0.10.0 — 2026-07-25
 
