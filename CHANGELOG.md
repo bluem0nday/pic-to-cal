@@ -22,34 +22,35 @@ user's account or calendar. Every fact is re-checkable on the event's page.
   three Film Forum pages filed clean this way.)
 - **A plain promise replaces the verification badge on URL input.** The
   page can't disagree with itself, so ✓/⚠/ℹ are image-input states. A
-  URL-filed hold ends with: "Filed from [URL] on [date] — all facts from
-  this page; nothing added." The risk on this path isn't misreading. It's the
-  model adding things. The promise makes additions easy to catch: open the
-  page and find every fact. Anything you can't find is a mistake.
-- **Nothing about the user goes in the invite.** Not their family, travel,
-  health, or schedule. Nothing pulled from other events on their calendar,
-  even when that's the reason for the hold. Say it in chat instead. Before
-  filing, always reread the invite as if you're a friend who just received
-  it. Everything in it should be on the event's own page. None of it should
-  be about the user. Anything that fails that test gets deleted, not
-  reworded.
+  URL-filed hold ends with a footer instead. It gives the page's URL, the
+  date it was read, and a note that every fact came from that page with
+  nothing added. The risk on this path is the model adding things. The
+  footer makes additions easy to catch: open the page and find every fact.
+  Anything you can't find is a mistake.
+- **Nothing about the user goes in the invite.** The invite never mentions
+  anything else on the user's calendar. That context goes in
+  chat instead. Before filing, reread the invite as a friend receiving it
+  would. Everything in it should be on the event's own page. None of it
+  should be about the user. Anything that fails that test gets deleted.
+  Rewording is not enough.
 - **Most of steps 4–6 doesn't apply to URLs.** No search, no ladder. If the
   page won't load even in the browser, stop. There's no fallback data. The
-  page is read for everything the invite needs, not just ticketing (a free
-  protest march has no tickets; the organizer's site and handles are the
-  best links). The action link is labeled by what the page asks. Never
-  invent a buy step. Multi-showtime pages: one showtime files; several mean
-  one question; a date named in the user's ask needs no question.
+  whole page is read for everything the invite needs. A free protest march
+  has no tickets, so there the organizer's site and handles are the best
+  links. The action link is labeled by what the page asks. Never invent a
+  buy step. One showtime on the page files directly. Several showtimes mean
+  one question. A date named in the user's ask needs no question.
 - **Verbatim capture rule.** Fetch summarizers paraphrase. The event's own
   description must be requested character-for-character, and re-fetched if
   it comes back as a summary (two of three Test 16 blurbs did).
-- **Confirm skipped when the ask already answered it.** URL input + a clear
-  file-it instruction + exactly one clean showtime = file directly and report.
-  Anything less shows the confirm. Past dates still get the heads-up question.
+- **Confirm skipped when the ask already answered it.** When a URL comes
+  with a clear file-it instruction and the page shows exactly one clean
+  showtime, the skill files directly and reports. Anything less shows the
+  confirm. Past dates still get the heads-up question.
 - **Published runtime joins the end-time chain** (both input types), as rung 2
-  of 4. End = start + the listed runtimes summed, ⏱-labeled. It sits above
-  venue-hours and the 2-hour fallback. Legal because the source printed the
-  number.
+  of 4. The end time is the start plus the listed runtimes, labeled with ⏱.
+  It sits above venue hours and the 2-hour fallback. Legal because the
+  source printed the number.
 - **Degradation table updated per input type.** Image reading and web search
   are image-input rows. Page fetch is required for URL input (no page, no
   hold; stop and say so).
