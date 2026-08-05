@@ -4,6 +4,56 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.13.0 — 2026-08-05
+
+A cinema was showing one film two ways at the same time, on 35mm and on
+digital. Each version had its own page, and the two pages read almost
+alike: same title, same cast, same summary, even the same heading over
+the Q&A list. The skill found the digital page first. That page listed
+different times and was missing one of the three nights, the one night
+the star of the film appeared. The skill had the right cinema, the right
+film, and the wrong showing.
+
+Version 0.12.0 fixed the same mistake in another form: a permanent film
+page still holding dates from an old run. The two are now one rule with
+three quick checks.
+
+Sold-out events read differently now. The skill only learns an event is
+sold out after it looks the event up, long after the user has moved on.
+So the hold gets filed either way, with the status where it will be seen.
+
+- **Three checks before the skill trusts a page's dates.** Do the page's
+  dates fall in the month being filed? Does the title carry the same
+  format as the picture? Is one field different, or several at once? A
+  page that fails any of the three is about something else, so it no
+  longer wins on conflict. It can still supply the summary, the credits,
+  and the running time. The dates come from the venue's current listing.
+  (Test 18: the old rule would have filed three holds with wrong times.)
+- **A format in the title is part of what the event is.** 35mm, 70mm,
+  IMAX, open captions, subtitled, director's cut. The skill used to treat
+  a title difference as harmless, since titles vary. A format word is the
+  exception. If the picture has one and the page does not, they are two
+  different showings.
+- **Finding the right page means reading the venue's own list.** The skill
+  already refused to guess a page's address from the film's title. It now
+  has something to do instead: load the venue's listing and read every
+  link on it. The correct page in this test sat next to the wrong one in
+  that list, and no search had surfaced it.
+- **Sold out is the first line of the hold and sits in the title.** The
+  title reads "Hold: SOLD OUT" and then the event. The word "Hold" stays,
+  because it is still a hold. The skill asks once before filing. Waitlist
+  and closed sales get the same handling, in the venue's own words.
+  Cancelled and postponed events have no rule yet.
+- **A page that loads but arrives empty now gets opened in a browser.**
+  Some venue sites build themselves after the page loads, so fetching one
+  returns a menu, a cookie notice, and no event. Asking the fetch again
+  cannot help. Opening the page does, and it also reveals the venue's list
+  of links.
+- **Those sites cannot be verified without a browser.** No browser means no
+  page and no list, so there is no way to tell the right showing from the
+  wrong one. The hold still gets filed. It carries the venue's link and
+  says the facts were not confirmed.
+
 ## 0.12.0 — 2026-08-05
 
 A poster that lists what's playing but never says when. Venues announce a

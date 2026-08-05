@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.12.0
+version: 0.13.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. Also trigger on an event-page URL with no image, when the URL is paired with a filing ask — "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. An image or an event URL MUST be present: if a trigger phrase arrives with neither, ask for one rather than running the skill.
 ---
 
