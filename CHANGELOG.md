@@ -4,6 +4,48 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.12.0 — 2026-08-05
+
+A poster that lists what's playing but never says when. Venues announce a
+month of films this way all the time. The skill now treats the picture and
+the venue's website as two halves of one answer. The picture says which
+films. The website says which nights. Both get checked against each other
+before anything is filed.
+
+Two ways this used to go wrong are now closed. Some venues keep one
+permanent page per film and update it each time the film returns, so the
+dates on it can be months old. The skill checks whether those dates fall in
+the month it is filing, and takes the schedule from the venue's current
+listing instead. And when the skill copies a venue's own description into a
+hold, it now reads the page in a browser. Fetching the page can return a
+summary written by a tool rather than the venue's words.
+
+- **A picture with no date at all now has a path.** Lineup and season
+  announcements name titles and runtimes and nothing else. The skill reads
+  identity from the picture and the schedule from the venue's page. The
+  hold is verified when titles, directors, years, and runtimes match across
+  both. The footer says the picture had no dates and names the page that
+  supplied them. If no schedule can be found, nothing is filed and the skill
+  says so. Several showtimes means one question, then one hold each.
+  (Test 17: one Instagram post became ten holds.)
+- **A venue's current listing beats its permanent film page.** Repertory
+  cinemas replay their catalog, so a per-film page carries whichever run
+  was published to it last. The test is one question: are the page's dates
+  in the month being filed? If not, the page is stale. Read it for the
+  synopsis and take the dates elsewhere. Guessing a page's address from the
+  film's title is also out. Those guesses usually fail, and the ones that
+  work land on the stale page.
+- **Exact quotes come from a rendered page.** Asked to reproduce a
+  description word for word, a fetch tool may return a summary or decline
+  outright. Rereading with firmer wording does not fix a decline. One
+  browser page read returns the real text. Two signs you were handed a
+  summary: the writing is smoother than a venue would write, or the tool
+  describes the text instead of reproducing it.
+- **Without a browser, the hold says the description is short.** It carries
+  the credits and any exact quote that survived, plus a line pointing at the
+  source for the rest. A summary presented as the venue's own words is the
+  failure this avoids. Dates, times, and place are unaffected.
+
 ## 0.11.0 — 2026-07-28
 
 Paste a link, get a hold. Hand the skill an event page's URL with "put a
