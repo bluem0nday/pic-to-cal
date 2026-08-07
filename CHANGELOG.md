@@ -4,6 +4,37 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.15.0 — 2026-08-07
+
+The skill used to fetch a page first and open a browser only when the fetch
+failed. It failed about half the time, and the workarounds had grown into
+four separate rules. Those rules are now one rule: open the page in the
+browser. The fetcher stays on as the stand-in for a session that has no
+browser, which is the only job it was ever doing well.
+
+The reason is not the failure rate. A blocked fetch says it was blocked. A
+fetch that quietly summarizes the page says nothing at all, and reads just
+as confident either way. Holds have to quote the venue word for word, so a
+summary can never be the source, and a browser read has to happen on every
+run regardless. Fetching first changed nothing that came after it.
+
+- **Render first; fetch only without a browser.** Step 5 opens the page in
+  the browser and reads it there. The four fetch failures seen in testing
+  are now listed in one place as the reason, not as four exceptions: 403
+  Forbidden, a login screen, site chrome with no event content, and the
+  quiet one, a summary or a refusal returned under HTTP 200. Roughly 1,100
+  words of exception-handling became about 400.
+- **The no-browser path keeps everything it had.** Watch the content and not
+  the status code. Never re-prompt a refusal, since firmer wording sometimes
+  fixes a paraphrase and never fixes a decline. On a domain that has 403'd
+  twice, skip the retry and corroborate from the search listing.
+- **New evidence for the blocked list.** shiftux.rosenfeldmedia.com, an
+  ordinary conference site with no apparent reason to block, 403'd a plain
+  fetch and rendered fine in the browser.
+- **Same change downstream.** Step 1's URL-input rule, step 4's won't-load
+  rule, the tools list, and the two page-reader rows of the capability table
+  all now name the browser as the reader and the fetcher as its stand-in.
+
 ## 0.14.1 — 2026-08-07
 
 Version 0.14.0's end-of-run check leaked what it was looking for. Searching
