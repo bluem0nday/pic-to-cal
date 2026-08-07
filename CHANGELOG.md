@@ -4,6 +4,23 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.14.1 — 2026-08-07
+
+Version 0.14.0's end-of-run check leaked what it was looking for. Searching
+the file for the event's name put that name in the file. It now reads the
+terms from a separate file and the command carries none of them. No private
+event ran under the old version.
+
+- **A check that names the thing it is checking for writes it down.** After a
+  private run deletes its transcript, the runtime writes a small file back,
+  and the skill looks in that file for the event's name, venue, and link. The
+  search command is itself recorded there, so naming the event in order to
+  run the search put it straight back into the one file the run had just
+  cleaned. The terms now go in a scratch file outside the transcript folder,
+  the search reads them from there, and the scratch file is deleted when the
+  check is done. Found by 0.14.0's own verification run, on a public test
+  event.
+
 ## 0.14.0 — 2026-08-07
 
 Some events are nobody's business. The skill is still being built, so an
