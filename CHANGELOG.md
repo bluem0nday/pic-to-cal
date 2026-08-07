@@ -4,6 +4,51 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.14.0 — 2026-08-07
+
+Some events are nobody's business. The skill is still being built, so an
+ordinary run leaves a paper trail behind the hold: a line in the test log,
+a changelog entry, a new rule crediting the event that taught it, a saved
+copy of the picture. During a private test in early August all of that was
+suppressed by hand, one instruction at a time. It is a mode now.
+
+Saying "private" or "incognito" alongside the usual ask files the hold and
+records nothing else. The hold is untouched. Same body, same links, same
+checks. Only the paperwork goes away.
+
+- **A word on the ask turns it on.** "pic to cal private", "private hold",
+  "calendar this, incognito". The word has to be part of the request. A
+  flyer for a private party, or a members only page, leaves the mode off,
+  because that describes the event and says nothing about how the user
+  wants the run recorded. When a request reads both ways the skill asks
+  once before starting.
+- **A private run writes nothing down.** No test log entry, and the clean
+  run streak stays where it is. No parked idea, no dated rule, no changelog
+  line. No artifacts, no screenshots, no saved copy of the picture. No
+  memory. No session notes.
+- **Anything learned during a private run is thrown away.** If a real bug or
+  a new case turns up, the skill says so in the chat and leaves it there. A
+  dated rule recording what was learned also records that a run happened,
+  and roughly when. The user can reproduce the finding later with an event
+  they don't mind logging.
+- **The hold is a normal hold.** Full description, exact quotes, cautions,
+  links, the verification footer, and the read through that checks the body
+  is safe to forward. Private mode changes what gets recorded. The hold is
+  the one thing the user asked to keep.
+- **The confirm block says the mode is on.** One line above the usual
+  summary, so the user sees it before saying yes.
+- **The run deletes its own session record.** The last thing a private run
+  does, once the hold is filed, is delete the file holding the conversation.
+  The trigger word is the permission, so the skill does not ask a second
+  time. It does ask in one case: when the private run sat in the middle of a
+  longer working session, deleting that file erases the whole session, so
+  the user gets a say.
+- **The scrub says where it stops.** The runtime writes a fresh file
+  straight back, carrying the last thing the user typed and two versions of
+  the session title, so the skill checks that file for the event and reports
+  what it finds. It states the limit once: a run that ends early never
+  reaches the scrub, and the runtime's own 30 day cleanup is the backstop.
+
 ## 0.13.0 — 2026-08-05
 
 A cinema was showing one film two ways at the same time, on 35mm and on

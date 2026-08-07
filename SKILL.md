@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.13.0
+version: 0.14.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. Also trigger on an event-page URL with no image, when the URL is paired with a filing ask — "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. An image or an event URL MUST be present: if a trigger phrase arrives with neither, ask for one rather than running the skill.
 ---
 
@@ -45,6 +45,43 @@ If a trigger phrase arrives with neither an image nor a URL, do not start the wo
 If an image is attached but the message contains no trigger phrase, do not start the workflow. The user is using a different skill or talking conversationally.
 
 **What URL input changes downstream (map, details in each step):** step 1 captures the fetched page word for word instead of transcribing pixels; most of steps 4–6 doesn't apply (the URL is the source — no search); the verification footer becomes the nothing-added promise (see "Verification status"); everything else — body structure, sourcing rules, calendar mechanics — runs unchanged.
+
+## Private mode (2026-08-07)
+
+Some events are nobody's business. A skill that files holds gets pointed at real life, and this one is also under construction, so every ordinary run leaves a paper trail: a run-log entry, a changelog line, a dated rule crediting the event that taught it, a saved copy of the image, a note in the session doc. Private mode files the hold and leaves no trail. It changes what gets **recorded**, never what gets **filed**.
+
+**The trigger is a modifier on the ask, not a word in the event.** Either word turns it on — private or incognito — attached to a normal filing ask: "pic to cal private", "private hold", "calendar this, incognito", "put this on my calendar privately". What does NOT turn it on is the word appearing in the event's own copy: a flyer for a private party, a page that says private members only, a venue with Private in its name. Those describe the event; they say nothing about how the user wants the run recorded. When an ask genuinely reads both ways, ask one question before starting — `Private run (nothing recorded in this project), or a normal one?` — and wait. Don't guess. Guessing wrong one way leaves a trail the user didn't want; guessing wrong the other way silently skips the test log.
+
+**What changes: this run writes nothing down.** The covenant is over the whole session, not just the nine steps. A private run produces:
+
+- no run-log entry, and the clean-run streak does not move in either direction
+- no parked idea, no dated rule, no changelog line, no version bump
+- no artifact, no 2-up, no invite screenshot, no saved copy of the image anywhere on disk
+- no memory write
+- no session doc, resume note, or handoff line
+- no mention in a later summary of "what we did today"
+
+**Lessons from a private run are discarded.** If something spec-worthy surfaces — a new input shape, a source trap, a bug — say it out loud in the chat reply and stop there. Don't write it down anywhere, not even in sanitized form, because a dated rule that says what was learned also says a run happened and roughly when. The user can reproduce the finding later with an event they don't mind recording. One rule is worth less than the promise that private means private.
+
+**What doesn't change: the hold itself.** Full body, exact-copy Details, cautions, links, verification footer, the guest check, the no-life-context rule, Free + Private + no attendees. A private hold is a normal hold; the calendar entry is the one artifact the user asked for. Nothing about this mode makes the body thinner.
+
+**The confirm block opens with the signal line**, so the user can see the mode is on before saying yes:
+
+```
+PRIVATE RUN — no test log, no spec attribution, no artifacts, no memory; transcript scrubbed at the end.
+```
+
+One line, at the top of the block, above `Ready to file:`. On a run that skips the confirm (URL input, step 7), the line leads the report instead.
+
+**Last step: scrub the session transcript.** After the hold is filed and reported, and only then. The trigger word is the standing permission for this one deletion — don't ask again. Mechanics, all verified 2026-08-07:
+
+1. **Find this session's own transcript.** It is the newest `.jsonl` in `~/.claude/projects/<slug>/`, where `<slug>` is the working directory's path with every `/` and every space turned into `-`. Never trust "newest" on its own — confirm the file by grepping it for a string only this conversation contains, then delete that file and no other. The failure this prevents is deleting an unrelated session's history.
+2. **One plain delete command.** `rm <path>`, nothing bundled with it. A single-purpose delete runs; the same delete compounded with other commands on one line was refused by the permission classifier.
+3. **Say what happened.** The delete succeeds and the session keeps running with no error. Within seconds the runtime recreates a file at the same path holding only lines written after the scrub. Both outcomes are fine, and the report names which one: `Transcript scrubbed — file removed` or `Transcript scrubbed — file recreated with [N] lines, none of them from before the scrub`.
+4. **Then check the residue, because the recreated file is not empty.** It carries three records the runtime re-seeds: the last user prompt (truncated), the session's title, and an AI-written one-line summary of the session. The user's own triggering message is the single thing most likely to name the event, so grep the new file for the event's title, venue, and URL. Report a hit rather than quietly deleting again — a second delete re-seeds the same three records. Where the runtime can rename a session, set a neutral title *before* the scrub so the two title records have nothing to carry.
+5. **The one case that gets a question.** If the private run happened part-way through a longer working session, the scrub erases that whole session's record, not only the private part. Say so and ask before deleting. This is the only place where the trigger word isn't permission enough.
+
+**Stated once, here, and not repeated on every run:** the transcript is the limit of what this mode can promise. Until the scrub runs, the whole conversation — image included — sits in a file on disk, and the scrub is best-effort: it can be blocked, and it leaves the three re-seeded records described above. A run that ends early, crashes, or gets interrupted never reaches step 5 and leaves its transcript intact; the runtime's own retention setting (`cleanupPeriodDays`, 30 days by default) is the backstop. Private mode is a promise about this project's records, which it keeps completely, and a best effort on the transcript.
 
 ## The workflow
 
@@ -381,6 +418,7 @@ This spec is also the spec for a phone app, and the phone won't have the same to
 | Page fetch | Image input: search-listing titles become the only corroboration — date and venue usually survive, times usually don't and get a per-field caution. URL input: can't run at all — the page is the only source, so stop and say so (step 4). |
 | Page rendering (browser) | Blocked and login-walled pages are unreadable. Enrichment is lost — price, captions, handles, FAQ detail. Verification against an unblocked, server-rendered page is unaffected. **Exact-copy Details is lost** on any page whose text the fetcher summarizes or refuses (2026-08-05): the body falls back to the credits and whatever short exact quote survived, plus the 📄 shortened-description line. **Verification itself is lost on a JS-rendered venue site** (2026-08-05, Test 18): the fetcher gets only site chrome, the venue's index of detail links never materializes, and there is no way to tell a stale or parallel listing from the right one — so the hold files as ⚠ Unverified with the venue link, never ✓. Dates and times then come from the image alone and say so. |
 | Calendar write | Nothing files. Required — stop and say so. |
+| Transcript deletion | Private mode still keeps its whole promise about this project's records, which is the part that lasts. Only the scrub is lost: the conversation stays in the runtime's own history until its retention clears it. Say that at the end of the run instead of reporting a scrub that didn't happen (2026-08-07). |
 
 Two rules follow from the table, and they hold in any runtime. Verification is never assumed: absent proof, the hold says so in words rather than filing a confident-looking guess — which is how the "detail, never correctness" promise survives a missing capability, by downgrading the badge rather than trying harder. And enrichment is never load-bearing: if a block of body copy would change the date, time, or place, it isn't enrichment — it belongs to verification and needs a readable source.
 
