@@ -32,8 +32,8 @@ friction.
   last command has finished.
 - **One yes covers filing and cleanup.** The private confirm now ends with
   "Save the event and delete the record of this session? (yes / no /
-  fix)" — the user's wording. The run closes with the calendar link plus
-  "Cleaned up." and nothing else.
+  fix)" — the user's wording, as is the close: the run ends with the calendar
+  link plus "Cleaned, done." and nothing else.
 - **The fine print went plain-English.** What private mode promises, what
   the app keeps regardless, and what lives beyond any local cleanup — the
   Mac's backups and Anthropic's own retention — in one short paragraph
