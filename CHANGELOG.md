@@ -24,16 +24,16 @@ friction.
   small session card after the delete, and the card names the event nearly
   every time, because the app writes it from what the conversation was
   about. Checking for a known, unchangeable outcome and announcing it each
-  run made success read as failure — the user read the residue paragraph as an
-  error twice before asking why it was there. The limit now lives once in
+  run made success read as failure — the author read the residue paragraph
+  as an error twice before asking why it was there. The limit now lives once in
   the spec's fine print. The 0.14.1 scratch-file rule survives as a
   build-mode note for recorded tests; the check also never belonged inside
   the cleanup step, since the card is written back only after the run's
   last command has finished.
 - **One yes covers filing and cleanup.** The private confirm now ends with
   "Save the event and delete the record of this session? (yes / no /
-  fix)" — the user's wording, as is the close: the run ends with the calendar
-  link plus "Cleaned, done." and nothing else.
+  fix)" — the author's wording, as is the close: the run ends with the
+  calendar link plus "Cleaned, done." and nothing else.
 - **The fine print went plain-English.** What private mode promises, what
   the app keeps regardless, and what lives beyond any local cleanup — the
   Mac's backups and Anthropic's own retention — in one short paragraph
@@ -45,7 +45,7 @@ friction.
   backwards, scrubbing first and reporting after, which wrote the event
   name straight back into the file it had just cleaned.
 - **The 🤫 title marker (2026-08-12, unversioned until now) rides along in
-  this release**, as the project notes said it would.
+  this release**, as promised when it shipped without one.
 
 ## 0.15.0 — 2026-08-07
 
