@@ -4,6 +4,49 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.16.0 — 2026-08-12
+
+Private runs used to end with a hand-run cleanup: find the conversation
+file, delete it, check what the app wrote back, report the leftovers. The
+permission layer stopped and questioned the loose commands on every run,
+and the closing report read like an error even when everything had worked.
+The cleanup is now one pre-approved script, one yes covers filing and
+cleanup, and the run closes with one word. Same promise, none of the
+friction.
+
+- **One script replaces the command sequence.** `private-scrub.sh` finds
+  the session's transcript by its id, confirms the file claims that id
+  inside, refuses to touch any other file, and deletes it. A project
+  permission rule pre-approves exactly that script path, so the permission
+  errors that hit every private run to date are gone. No broad delete
+  permission exists anywhere.
+- **The residue check is retired from routine runs.** The app rewrites a
+  small session card after the delete, and the card names the event nearly
+  every time, because the app writes it from what the conversation was
+  about. Checking for a known, unchangeable outcome and announcing it each
+  run made success read as failure — the user read the residue paragraph as an
+  error twice before asking why it was there. The limit now lives once in
+  the spec's fine print. The 0.14.1 scratch-file rule survives as a
+  build-mode note for recorded tests; the check also never belonged inside
+  the cleanup step, since the card is written back only after the run's
+  last command has finished.
+- **One yes covers filing and cleanup.** The private confirm now ends with
+  "Save the event and delete the record of this session? (yes / no /
+  fix)" — the user's wording. The run closes with the calendar link plus
+  "Cleaned up." and nothing else.
+- **The fine print went plain-English.** What private mode promises, what
+  the app keeps regardless, and what lives beyond any local cleanup — the
+  Mac's backups and Anthropic's own retention — in one short paragraph
+  with no file formats and no tool names.
+- **The order is now explicit: report, then clean up, then one closing
+  line.** The cleanup erases only what came before it, so the report — which
+  names the event in its link — goes out first and gets erased from the
+  record while the user keeps it on screen. The day's own run had done it
+  backwards, scrubbing first and reporting after, which wrote the event
+  name straight back into the file it had just cleaned.
+- **The 🤫 title marker (2026-08-12, unversioned until now) rides along in
+  this release**, as the project notes said it would.
+
 ## 0.15.0 — 2026-08-07
 
 The skill used to fetch a page first and open a browser only when the fetch
