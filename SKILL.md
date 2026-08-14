@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.16.0
+version: 0.17.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. Also trigger on an event-page URL with no image, when the URL is paired with a filing ask — "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. An image or an event URL MUST be present: if a trigger phrase arrives with neither, ask for one rather than running the skill.
 ---
 
@@ -298,6 +298,8 @@ If neither search attempt returned a usable URL, or if the page wouldn't load, c
 Reserve "verified" for actual corroboration. A link existing is not verification — that's the whole point of the badge.
 
 **Per-field honesty (2026-07-04).** Verification isn't all-or-nothing. When the page corroborates some fields (date, venue) but is silent on another (start time), the badge can still say Verified — but the un-corroborated field gets its own plain-language caution line in the body's caution block (after Details). Pattern: `⏰ Start/end times from [the only source] — couldn't be re-confirmed on [what was checked]. Double-check the time when you get tickets.` Silence on a field is not a conflict; it's a gap, and the body says so in words the user's future self will understand at a glance.
+
+**One source, several holds: each earns its own state (2026-08-14, Casanara anniversary).** Verification is decided per HOLD, not per source. When one image or page yields more than one HOLD, check and badge each separately — a page that confirms one of them says nothing about the others. The run that set this: an Instagram post whose artwork advertised a block party and whose caption added an after party inside the bar the same night. The co-host's event page confirmed the block party, so that HOLD filed ✓ Verified; the after party appeared nowhere but the caption, so it filed ⚠ Unverified from the same screenshot. What this closes is the pull toward stamping one good source across every hold split from it, which is the exact claim the three states exist to prevent.
 
 ### Step 7: Single confirm before create
 

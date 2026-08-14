@@ -4,6 +4,22 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.17.0 — 2026-08-14
+
+One screenshot can produce more than one hold, and until now nothing
+said each of them has to earn its verification separately. A single good
+source page could have been stamped across every hold split from the
+same image, which would tell the user facts were confirmed when they
+weren't. It can't now.
+
+- **Verification is decided per hold, not per source.** When one image
+  or page yields several HOLDs, each is checked and badged on its own.
+  The run that found it: an Instagram post whose artwork advertised a
+  block party and whose caption added an after party inside the bar the
+  same night. The co-host's event page confirmed the block party, so
+  that hold filed ✓ Verified; the after party appeared nowhere but the
+  caption, so it filed ⚠ Unverified. Same screenshot, two states.
+
 ## 0.16.0 — 2026-08-12
 
 Private runs used to end with a hand-run cleanup: find the conversation
