@@ -25,6 +25,11 @@ that work is done.
   film had already happened. The question sat under a 50-line confirm
   block, and it took two more rounds before the user saw that every date
   was past.
+- **The description is back under 1,024 characters.** It grew to 1,136
+  in 0.11.0, when URL input was added, and claude.ai rejects skill
+  uploads over 1,024. The account copy of the skill stayed at 0.7.0 as a
+  result. The new description is 984 characters and keeps every trigger
+  and exclusion.
 
 ## 0.17.0 — 2026-08-14
 
