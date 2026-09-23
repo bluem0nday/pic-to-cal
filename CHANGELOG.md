@@ -4,6 +4,28 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.18.0 — 2026-09-23
+
+When an event has already happened, the skill now says so first. The
+question used to sit at the bottom of the confirm, under a full calendar
+invite for holds the user might not want. Now it comes before any of
+that work is done.
+
+- **The past-date question moved from step 7 to step 3.** As soon as the
+  dates resolve and any of them is before today, the skill stops and asks
+  one question on its own. It shows no confirm block and no invite
+  description, and it does no more searching or page reading. On image
+  input the question sits above the transcription.
+- **Three wordings.** One for a single past date, one for when every date
+  is past, and one for a mix of past and upcoming dates. Each names the
+  dates that have passed.
+- **A no ends the run.** Nothing is filed and no confirm follows. A yes
+  continues as normal, and the confirm does not ask again.
+- The run that found it: a series page where all four screenings of one
+  film had already happened. The question sat under a 50-line confirm
+  block, and it took two more rounds before the user saw that every date
+  was past.
+
 ## 0.17.0 — 2026-08-14
 
 One screenshot can produce more than one hold, and until now nothing

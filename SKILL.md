@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.17.0
+version: 0.18.0
 description: Turns an attached event image (screenshot, flyer, poster, photo) into a Google Calendar HOLD with the registration URL embedded. Invoked as either "pic-to-cal" or "pic to cal". Trigger whenever an image is attached AND the user asks to put it on the calendar, in any phrasing — "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal", or anything similar. Pasted or dragged desktop screenshots count as attached images, not just phone attachments. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image-or-event context — those belong to quick-capture. Do NOT trigger when the image is clearly a person's headshot, a company logo, or a screenshot of a chat message — route those to quick-capture or update-contact instead. Also trigger on an event-page URL with no image, when the URL is paired with a filing ask — "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. An image or an event URL MUST be present: if a trigger phrase arrives with neither, ask for one rather than running the skill.
 ---
 
@@ -107,7 +107,7 @@ Comments are frame clutter too (2026-08-07). Only the posting account is account
 
 A corroborating signal inside the image can confirm an inferred field — e.g. a countdown timer ("1 week 6 days until the event") confirming that a year-less date is this year. Use it silently; it's a check, not content for the invite.
 
-Show the user the full transcription before doing anything else. Format:
+Show the user the full transcription before doing anything else. The one thing that goes above it is step 3's past-date question, when a date has already passed. Format:
 
 ```
 Transcription:
@@ -174,6 +174,14 @@ If a key field looks ambiguous in the image — date is half-cropped, two times 
 ```
 
 Wait for the user's reply before moving on.
+
+**Past dates: ask first, and ask alone (2026-09-23).** A date in the past is not an error. Old flyers file the same as upcoming ones, and the skill never moralizes or refuses. But a past date decides whether the rest of the run is worth doing, so it is the first thing the user reads. As soon as the dates resolve and any of them falls before today, stop and ask one question. Nothing else comes first: no confirm block, no invite description, no more searching or page reading. On image input the question leads the message and the transcription follows below it. Name what is past and when:
+
+- One date: `Heads up: [event title] was on [Mon D], before today. Still want the hold? (yes / no)`
+- Every date: `Heads up: every date for [event title] was before today. The last was [Mon D]. Still want holds? (yes / no)`
+- Some dates: `Heads up: [N] of the [M] dates for [event title] were before today ([Mon D], [Mon D]). Hold those too, or only the upcoming ones?`
+
+On no, stop. Nothing is filed and no confirm block follows. On yes, the run continues as normal, and the confirm does not repeat the heads-up. This rule runs on every path, including the URL path that skips the confirm. The run that set it: a series page where all four screenings of one film had already happened. The old rule put the question at the bottom of a 50-line confirm block, and it took two more rounds before the user saw that every date was past.
 
 ### Step 4: Find the official registration page
 
@@ -325,9 +333,9 @@ Schedule it? (yes / no / fix)
 
 On a private run the Title line shows the title that will actually be filed, 🤫 included: `Title:       📌 🤫 Hold: [event title]`. Same rule as every other field in the block — real values, never the template. And the closing question becomes `Save the event and delete the record of this session? (yes / no / fix)` — one yes covers the filing and the cleanup (2026-08-12; full spec in the private-mode section).
 
-**URL input: skip the confirm when the ask already answered it (2026-07-28, Test 16).** All three conditions, or the confirm shows as written: (1) URL input; (2) the user's message clearly says to file it ("put a hold for this on my calendar"), not a hedged ask ("what do you think about this event?"); (3) exactly one showtime resolved, no low-confidence field, no question pending. Then file directly and report — the ask was the yes, and re-asking it is friction (Test 16 filed three holds this way; the user corrected after via the report, which worked). The guest check (step 8) still runs — it doesn't depend on a human looking. The past-date courtesy below still asks even on this path: a past date on a series page is likelier a surprise than a choice.
+**URL input: skip the confirm when the ask already answered it (2026-07-28, Test 16).** All three conditions, or the confirm shows as written: (1) URL input; (2) the user's message clearly says to file it ("put a hold for this on my calendar"), not a hedged ask ("what do you think about this event?"); (3) exactly one showtime resolved, no low-confidence field, no question pending. Then file directly and report — the ask was the yes, and re-asking it is friction (Test 16 filed three holds this way; the user corrected after via the report, which worked). The guest check (step 8) still runs — it doesn't depend on a human looking. The past-date question from step 3 still asks even on this path: a past date on a series page is likelier a surprise than a choice.
 
-**Past dates don't matter.** A date in the past is not an error and not noise — the data is the data — old flyers file the same as upcoming ones. The only courtesy: if the resolved date is already past, add one neutral line to the confirm — `Heads up: this date is already past. Still schedule it? (yes / no)` — then proceed on yes. Don't moralize, don't refuse, don't call it noise.
+**Past dates were settled at step 3.** By the time the confirm is built, the user has already said yes to any past date. The confirm does not raise it again.
 
 ### Step 8: Create the calendar event
 
