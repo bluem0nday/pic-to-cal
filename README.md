@@ -1,10 +1,10 @@
 # pic-to-cal
 
-A [Claude skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills) that turns a picture of an event into a calendar hold. Attach a screenshot, flyer, poster, or a photo of a poster on the street, say "calendar this" (or any trigger phrase in [SKILL.md](SKILL.md)), and a 📌 Hold lands on your Google Calendar. It carries everything needed to actually attend. The event's own link sits on top, then the venue address, then the full flyer context with live links. If the event sells tickets, that top link is where to buy them. If the event page showed a sold-out notice when the hold was filed, the hold says so in its title, dated the day it was checked.
+A [Claude skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills) that turns a picture of an event, or its web page, into a calendar hold. Attach a screenshot, flyer, poster, or a photo of a poster on the street, say "calendar this" (or any trigger phrase in [SKILL.md](SKILL.md)), and a 📌 Hold lands on your Google Calendar. It carries everything you need to attend. That means the street address, the flyer's full text with every link clickable, and a link to the event's own page. If the event sells tickets, the hold links to where you buy them. If the event's page shows it sold out or waitlist-only, the title says so. Inside the hold, the first line records what the page said and the day the skill checked.
 
 ![A concert poster wrapped around a lamppost, and the calendar hold filed from it](examples/2up_DomDolla.png)
 
-*A poster on a lamppost becomes a hold with the tickets link on top. It also carries a caveat that 3:00 may be doors, because the poster printed no time and the ticket listings did.*
+*A poster on a lamppost becomes a hold with the tickets link. It also carries a caveat that 3:00 may be doors, because the poster printed no time and the ticket listings did.*
 
 The part that makes it more than OCR: before filing, the skill finds the event's real page on the web. That is what makes the hold complete. The live link and street address are already in it if you decide to go. It doubles as a fact-check. The page wins over the image on a conflict, but only after the skill confirms the page describes the same showing. Venues often run one title several ways at once.
 
