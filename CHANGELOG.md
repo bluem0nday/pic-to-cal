@@ -4,6 +4,42 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.19.0 — 2026-10-04
+
+When an event page links a second date, the skill now reads that page
+too and asks which dates to hold. Before, it asked a yes/no about the
+one page it was given, and the other date could slip past the user.
+Waitlist-only events also get a fixed word in the title.
+
+- **Linked dates count as dates.** When the page links another date of
+  the same event on a page of its own (a second date, an added show, a
+  date opened for the waitlist), the skill reads that page and treats
+  its date as one of the event's dates. It asks which dates to hold even
+  when the user sent only one of the pages.
+- **One question carries the status.** When there is more than one
+  date, the question lists each one with its status as the page printed
+  it, and asks which to hold: the original, the other date, or both.
+  This replaces the sold-out yes/no, so the user answers one question
+  instead of two.
+- **Waitlist-only titles read `📌 Hold: WAITLIST ONLY — [event title]`.**
+  0.13.0 handled waitlist-only events like sold-out ones, in the
+  venue's own words, so the title word could change from run to run.
+- **A linked date's hold says which date it is.** It keeps the event's
+  title and adds the page's own name for the date in parentheses, such
+  as `(second date)`. The top line of each hold names the other dates
+  and their status.
+- **RSVP events get the availability check too.** On URL input the
+  skill checked availability only when the event was ticketed. A free
+  RSVP event with a guest limit can still be full, and that wording
+  would have skipped the check that finds the waitlist. It now checks
+  whenever the page shows tickets or a guest limit. Price is still
+  quoted only for ticketed events.
+- The run that found it: a museum tour on Partiful, full, with a
+  waitlist. The last line of its description linked a second date the
+  host had opened for the waitlist, and that one was full too. The skill
+  found both dates and asked only about the first. The user had not
+  known the second date existed.
+
 ## 0.18.0 — 2026-09-23
 
 When an event has already happened, the skill now says so first. The
