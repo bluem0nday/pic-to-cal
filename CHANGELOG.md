@@ -4,6 +4,36 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.20.0 — 2026-10-05
+
+A hold no longer shows the same text twice. When the event page says
+everything the image says, or more, the page's text leads the hold and
+the image's transcription is dropped. Anything only the image has goes
+in once, in a short block of its own.
+
+- **The event page leads Details when it earned the ✓ and covers the
+  image.** Its text is copied word for word and labeled with the page's
+  name. Lines only the image has go in an "Also in the screenshot" block
+  right after it.
+- **The image still leads when there is no page,** when the page is
+  ⚠ Unverified, or when the page says less than the image. Anything
+  extra from the page goes below, in a block that holds only the lines
+  the body doesn't already carry.
+- **The transcription block is gone from the hold.** The transcription
+  still appears in chat before filing. A stale line the skill drops
+  from Details, such as "TOMORROW", is no longer kept anywhere in the
+  hold.
+- **A summary line, enrichment block, or Appearing live block that
+  only repeats Details is left out.**
+- **`<pre>` is banned from the body.** The 0.19.1 lesson moved into
+  the formatting rules, since the block it fixed is gone.
+- The run that found it: the same Spectacle post as 0.19.1. Once the
+  transcription wrapped, the user could read it, and saw the caption
+  twice. The Spectacle page repeated the caption word for word, added
+  two paragraphs, and put each showtime on its own line. The user set
+  the rule: if the page matches or beats the image, drop the image's
+  transcript.
+
 ## 0.19.1 — 2026-10-05
 
 The transcription block at the bottom of a hold was formatted

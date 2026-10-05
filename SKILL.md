@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.19.1
+version: 0.20.0
 description: Turns an event image (screenshot, flyer, poster, photo) or an event-page URL into a Google Calendar HOLD with the registration link embedded. Invoked as "pic-to-cal" or "pic to cal". Trigger when an image is attached AND the user asks to put it on the calendar, in any phrasing: "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal". Pasted or dragged desktop screenshots count as attached images. Also trigger on an event-page URL paired with a filing ask: "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image or event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If a trigger phrase arrives with no image and no URL, ask for one rather than running the skill.
 ---
 
@@ -324,7 +324,7 @@ Reserve "verified" for actual corroboration. A link existing is not verification
 
 ### Step 7: Single confirm before create
 
-Show one summary block and ask one yes/no question. **The block includes the full invite body, labeled `Description:` (Google Calendar's own name for the field), rendered as it will read in the calendar** — links, caution lines, labeled blocks, transcription, verification footer. Never a header-only confirm: the user inspects the body before saying yes (2026-07-05).
+Show one summary block and ask one yes/no question. **The block includes the full invite body, labeled `Description:` (Google Calendar's own name for the field), rendered as it will read in the calendar** — links, caution lines, labeled blocks, verification footer. Never a header-only confirm: the user inspects the body before saying yes (2026-07-05).
 
 ```
 Ready to file:
@@ -358,6 +358,16 @@ On a private run the Title line shows the title that will actually be filed, �
 
 **Guest check — always the last step before creating the event, even on runs that skip the confirm (2026-07-28).** Reread the finished body as if you're a friend who just received the invite, and ask two things: is everything in it on the event's own page (or image)? Is any of it about the user? The answers must be **yes** and **no**, or the failing line gets deleted — not reworded. This is the same reread the user does before forwarding a hold to a friend.
 
+**Every piece of text appears once (2026-10-05).** The body never carries the same text twice. Before writing it, decide which source leads Details:
+
+1. **The event page leads** when it earned the ✓ (step 6) and its event text says everything the image says, or more. Details is the page's own text, copied word for word from the browser read and labeled with the page, such as `Details (from the Spectacle page):`. Leave out site chrome such as buttons, menus, and share links.
+2. **Lines only the image has** go in an `Also in the [source]:` block right after Details, copied exactly. Omit the block when there are none.
+3. **The image leads** in every other case: no page, a ⚠ Unverified page, or a page that says less than the image. Details is the image's text, as before. Anything the page adds goes in a `From the [page]:` block below, holding only the lines the body doesn't already carry.
+
+The body has no transcription block. The full transcription appears in chat at step 1 and nowhere in the hold. A summary line, enrichment block, or Appearing live block that would only repeat Details is left out.
+
+The run that set it: an Instagram post for a film at Spectacle. The hold carried the caption twice, once in Details and once in a transcription block at the bottom, and put the Spectacle page's two extra paragraphs in a block of their own. The page said everything the caption said, and it put each showtime on its own line where the caption ran all four together.
+
 Use the Google Calendar `create_event` tool with:
 
 - **calendarId**: resolve by name, never by a pinned ID. Call `list_calendars` and look for a calendar named **"Event Holds"** — match case-insensitively with surrounding whitespace trimmed ("event holds" counts). If it exists, file there. If it doesn't, file to `primary` and append one line to the step-9 report: `Filed to your main calendar — create a Google calendar named "Event Holds" and future holds will file there instead, toggleable in the sidebar.` Don't create the calendar (the connector can't) and don't ask a setup question — the calendar's existence IS the configuration. Resolve the destination before the step-7 confirm so the block shows where the hold will actually land. If the create against a found calendar fails, stop and say which calendar was tried
@@ -368,10 +378,11 @@ Use the Google Calendar `create_event` tool with:
 - **visibility**: `private`
 - **availability**: `AVAILABILITY_FREE` (shows the time as **Free**, not Busy). A HOLD is a placeholder, not a commitment — it shouldn't block the user's availability or make them look booked. Default every HOLD to Free + Private.
 - **attendees**: omit (no invitations)
-- **description**: HTML, structured like this. **Formatting caution:** Google Calendar renders *both* `<br>` tags and literal newline characters as line breaks, so never put an actual newline next to a `<br>` in the description string — you'll get double-spacing. Keep each block's markup contiguous (no literal line breaks inside it); use `<br>` alone for a single line break and `<br><br>` for a blank line. Let the `<p>` tags handle spacing *between* sections.
+- **description**: HTML, structured like this. **Formatting caution:** Google Calendar renders *both* `<br>` tags and literal newline characters as line breaks, so never put an actual newline next to a `<br>` in the description string — you'll get double-spacing. Keep each block's markup contiguous (no literal line breaks inside it); use `<br>` alone for a single line break and `<br><br>` for a blank line. Let the `<p>` tags handle spacing *between* sections. Never use `<pre>` (2026-10-05): it never wraps a line, and Calendar cuts long lines off at the right edge of the event panel.
 
 ```html
-<!-- BODY ORDER (2026-07-20, remember-first): the HOLD helps the user remember and decide, not push a purchase. The event's own content leads; the action link sits below it, deliberately. Order: [availability, if unavailable] → Venue → Details → cautions → summary → action link (+ price) → enrichment → transcription → footer. -->
+<!-- BODY ORDER (2026-07-20, remember-first): the HOLD helps the user remember and decide, not push a purchase. The event's own content leads; the action link sits below it, deliberately. Order: [availability, if unavailable] → Venue → Details → also-in-the-image → cautions → summary → action link (+ price) → enrichment → source → footer. No transcription block (2026-10-05). -->
+<!-- NOTHING TWICE (2026-10-05): see "Every piece of text appears once" above the field list. It decides whether the page or the image leads Details. -->
 
 <p><b>🎟 SOLD OUT</b> — [what the page said], checked [YYYY-MM-DD]. [Whether it may change.]</p>
 <!-- TOP LINE ONLY when the event is sold out / waitlist-only / sales ended (2026-08-05, step 5). It outranks Venue because it changes what the rest of the body is for. Everything else about availability — remaining-ticket counts, "N spots left" — stays a normal 🎟 caution line in the block below; this line is reserved for unavailable. Omit it entirely otherwise. -->
@@ -379,14 +390,17 @@ Use the Google Calendar `create_event` tool with:
 <!-- The venue's own site or profile, when the image or a checked page surfaces one. Skip the line when there's no venue URL. -->
 
 <p><b>Details (from the [source]):</b><br>
-<!-- Name the actual source type in the label: "(from the flyer)", "(from the screenshot)", "(from the email)", "(from the text)". "Details" is the generic header; the parenthetical keeps the provenance. -->
-[the event's own description / caption text from the image, copied EXACTLY as written — same wording, same punctuation, same line breaks, same emphasis (lead-ins the image bolds stay <b> in the HTML; 2026-07-22). Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. The Original transcription block below still keeps every word. No other edits, ever.]</p>
-<!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss; format as its own bare line `@handle - [profile URL]`, no "More info" label wrapping it — the label was clutter, 2026-07-21), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt; the transcription below is the raw backup, but the body itself should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
-     ENRICHMENT (2026-07-04): the pages checked in steps 4–5 usually know things the image doesn't — the ticket page's own description, FAQ details (dress code, age limit, accessibility, hardship tickets), the venue's character. Bring the good ones into the body as their own labeled blocks: "From the ticket page:", "From the organizer's FAQ:". The label IS the anti-pollution rule — more context is better, but every block says where it came from, and nothing gets blended into the flyer's own words. -->
+<!-- Name the actual source in the label: "(from the Spectacle page)" when the page leads, or "(from the flyer)", "(from the screenshot)", "(from the email)", "(from the text)" when the image leads. "Details" is the generic header; the parenthetical keeps the provenance. -->
+[the event's own description from the source that leads (the page or the image, per "Every piece of text appears once"), copied EXACTLY as written — same wording, same punctuation, same line breaks, same emphasis (lead-ins the image bolds stay <b> in the HTML; 2026-07-22). Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. No other edits, ever.]</p>
+<!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss; format as its own bare line `@handle - [profile URL]`, no "More info" label wrapping it — the label was clutter, 2026-07-21), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt: the body should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
+     ENRICHMENT (2026-07-04): the pages checked in steps 4–5 usually know things the image doesn't — the ticket page's own description, FAQ details (dress code, age limit, accessibility, hardship tickets), the venue's character. Bring the good ones into the body as their own labeled blocks: "From the ticket page:", "From the organizer's FAQ:". The label IS the anti-pollution rule — more context is better, but every block says where it came from, and nothing gets blended into the flyer's own words. A block holds only text the body doesn't already carry (2026-10-05): when Details comes from a page, that page has no separate block. -->
+
+<p><b>Also in the [source]:</b><br>[only the lines from the image that the leading page doesn't carry, copied exactly]</p>
+<!-- Only when the page leads Details (2026-10-05). Omit the block when the page carries every line, and always when the image leads. -->
 
 <p>[caution lines — ⏰ time judgments, ⏱ derived end times, 🎟 availability — one line each, short, labeled, dated (e.g. "⏰ Doors filed as 11 PM — flyer doesn't say AM/PM"). Omit the paragraph when there are none.]</p>
 
-<p>[One-line plain summary — e.g. "Three rooms, five artists on the lineup." No unsourced labels (see the lineup rule in step 3), no hedge sentences repeating what the labels already say.]</p>
+<p>[One-line plain summary — e.g. "Three rooms, five artists on the lineup." No unsourced labels (see the lineup rule in step 3), no hedge sentences repeating what the labels already say. Omit it when it would only repeat Details (2026-10-05).]</p>
 
 <p><b>Appearing live:</b><br>
 - [Name], [Title]  ← only when it adds people or roles Details doesn't already carry (a talk's Q&A guest, an intro speaker). When Details lists the lineup, omit this block — don't repeat it. Never list film actors, documentary interviewees, or discussed authors here.</p>
@@ -403,9 +417,6 @@ Use the Google Calendar `create_event` tool with:
 
 <p><b>Audience:</b> [audience if visible in image or on page]</p>
 <hr>
-<p><b>Original transcription:</b></p>
-<p>[full transcription from step 1, with <br> for each line break and <br><br> for each blank line]</p>
-<!-- A normal paragraph, never <pre> (2026-10-05). <pre> never wraps a line. A flyer's short lines fit inside it, but an Instagram caption's paragraphs run 200 to 600 characters each, and Calendar cut every one off at the right edge of the event panel. -->
 <p><b>Source:</b> <a href="[source URL]">[source URL]</a></p>
 <!-- Link to the source's own page (e.g. the Instagram profile https://www.instagram.com/spectaclenyc/ ). Show the literal URL string as the visible link text, not a friendly title. -->
 
