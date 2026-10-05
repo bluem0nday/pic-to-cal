@@ -4,6 +4,28 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.19.1 — 2026-10-05
+
+The transcription block at the bottom of a hold was formatted
+inconsistently with the rest of the hold. It used a typewriter font and
+never wrapped a line, so long paragraphs ran off the right edge of the
+event panel and Calendar cut them off. The block now uses the same
+formatting as the rest of the hold, and every line wraps.
+
+- **The template's transcription block is now a normal paragraph.** Line
+  breaks are `<br>` tags, the same as in the Details block, and every
+  line wraps to the width of the panel.
+- **Why it took this long to show.** A flyer's lines are short and fit
+  inside a `<pre>` block. An Instagram caption runs a few paragraphs of
+  200 to 600 characters each, and every one was cut off. The confirm
+  block shows the body as plain text, which wraps, so the problem only
+  appeared once the hold was on the calendar.
+- **Two other mentions of `<pre>` in the spec now say "transcription
+  block".** No rule changed.
+- The run that found it: an Instagram post for a film at Spectacle,
+  filed as three holds. The user opened one and saw the transcription
+  cut off at the right edge.
+
 ## 0.19.0 — 2026-10-04
 
 When an event page links a second date, the skill now reads that page

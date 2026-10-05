@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.19.0
+version: 0.19.1
 description: Turns an event image (screenshot, flyer, poster, photo) or an event-page URL into a Google Calendar HOLD with the registration link embedded. Invoked as "pic-to-cal" or "pic to cal". Trigger when an image is attached AND the user asks to put it on the calendar, in any phrasing: "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal". Pasted or dragged desktop screenshots count as attached images. Also trigger on an event-page URL paired with a filing ask: "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image or event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If a trigger phrase arrives with no image and no URL, ask for one rather than running the skill.
 ---
 
@@ -114,7 +114,7 @@ Transcription:
 [every line of text from the image, in roughly the order it appears]
 ```
 
-**URL input: read the page, don't transcribe (2026-07-28, Test 16; browser-first since 2026-08-07).** For a URL, step 1 is one browser read of the page, captured verbatim — the page text plays the transcription's role everywhere downstream. Three rules: (1) Read it in the browser, not a fetcher. The Details block needs the venue's own sentences and a summarizer cannot promise them; asking harder is not a fix (step 5). (2) The frame rule applies to pages too: capture the event's own content, not site chrome, navigation, or other events listed on the page. (3) Skip the transcription display — the user sent the page, they can open it — and the body carries no `<pre>` transcription block; the Source link replaces it.
+**URL input: read the page, don't transcribe (2026-07-28, Test 16; browser-first since 2026-08-07).** For a URL, step 1 is one browser read of the page, captured verbatim — the page text plays the transcription's role everywhere downstream. Three rules: (1) Read it in the browser, not a fetcher. The Details block needs the venue's own sentences and a summarizer cannot promise them; asking harder is not a fix (step 5). (2) The frame rule applies to pages too: capture the event's own content, not site chrome, navigation, or other events listed on the page. (3) Skip the transcription display — the user sent the page, they can open it — and the body carries no transcription block; the Source link replaces it.
 
 ### Step 2: Decide if this is actually an event
 
@@ -381,7 +381,7 @@ Use the Google Calendar `create_event` tool with:
 <p><b>Details (from the [source]):</b><br>
 <!-- Name the actual source type in the label: "(from the flyer)", "(from the screenshot)", "(from the email)", "(from the text)". "Details" is the generic header; the parenthetical keeps the provenance. -->
 [the event's own description / caption text from the image, copied EXACTLY as written — same wording, same punctuation, same line breaks, same emphasis (lead-ins the image bolds stay <b> in the HTML; 2026-07-22). Do not summarize, paraphrase, condense, fix grammar, or re-order it. If the screenshot cut it off, reproduce what's visible and append " … [truncated in screenshot]" at the break. ONE narrow exception (2026-07-07, Synthicide "🔥 TOMORROW 🔥" test): a standalone relative-time hype line (TOMORROW, TONIGHT, LAST CALL, DON'T MISS) may be omitted and replaced with "[…]" — it reads as false by the time the hold is opened. The Original transcription block below still keeps every word. No other edits, ever.]</p>
-<!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss; format as its own bare line `@handle - [profile URL]`, no "More info" label wrapping it — the label was clutter, 2026-07-21), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt; the <pre> transcription below is the raw backup, but the body itself should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
+<!-- THE PRINCIPLE (2026-07-04): the HOLD body is the jumping-off point for deciding to attend — so ALL context from the image goes into the body, and every reference the image makes becomes a LIVE LINK, if it exists in the photo. Event page, tickets link, organizer site, venue, Instagram/X handles (resolve the handle to its real profile URL with one quick search/fetch — a dead "@name" in plain text is a miss; format as its own bare line `@handle - [profile URL]`, no "More info" label wrapping it — the label was clutter, 2026-07-21), tag/category lines, capacity ("7 spots remaining, at time of screenshot"), the flyer artwork in one line so the event is visually recognizable later. Don't cherry-pick a "clean" excerpt; the transcription below is the raw backup, but the body itself should let the user reach the venue, the organizer, and the tickets without re-finding anything. Only skip what the image genuinely doesn't reference.
      ENRICHMENT (2026-07-04): the pages checked in steps 4–5 usually know things the image doesn't — the ticket page's own description, FAQ details (dress code, age limit, accessibility, hardship tickets), the venue's character. Bring the good ones into the body as their own labeled blocks: "From the ticket page:", "From the organizer's FAQ:". The label IS the anti-pollution rule — more context is better, but every block says where it came from, and nothing gets blended into the flyer's own words. -->
 
 <p>[caution lines — ⏰ time judgments, ⏱ derived end times, 🎟 availability — one line each, short, labeled, dated (e.g. "⏰ Doors filed as 11 PM — flyer doesn't say AM/PM"). Omit the paragraph when there are none.]</p>
@@ -404,7 +404,8 @@ Use the Google Calendar `create_event` tool with:
 <p><b>Audience:</b> [audience if visible in image or on page]</p>
 <hr>
 <p><b>Original transcription:</b></p>
-<pre>[full transcription from step 1]</pre>
+<p>[full transcription from step 1, with <br> for each line break and <br><br> for each blank line]</p>
+<!-- A normal paragraph, never <pre> (2026-10-05). <pre> never wraps a line. A flyer's short lines fit inside it, but an Instagram caption's paragraphs run 200 to 600 characters each, and Calendar cut every one off at the right edge of the event panel. -->
 <p><b>Source:</b> <a href="[source URL]">[source URL]</a></p>
 <!-- Link to the source's own page (e.g. the Instagram profile https://www.instagram.com/spectaclenyc/ ). Show the literal URL string as the visible link text, not a friendly title. -->
 
