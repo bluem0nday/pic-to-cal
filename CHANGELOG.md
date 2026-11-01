@@ -4,6 +4,30 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.23.0 — 2026-11-01
+
+A confirmed entry can link straight to the tickets. Receipts are hard to
+find in an inbox at the door, so the skill reads the receipt and puts the
+links in the entry.
+
+- **The skill asks first, every time:** "Search your email for the order
+  confirmation?" It never searches without a yes, and it reads only the
+  matching receipt.
+- **Under the order number, the entry gains a line for each ticket link
+  the receipt gives,** labeled the way the email labels it, plus a link
+  to the receipt email itself. The receipt link opens only for the user,
+  and the user's address is removed from it.
+- **Some ticket links open without a login.** Anyone who receives a
+  forwarded entry may be able to open the tickets.
+- **The receipt often arrives after the screenshot.** When it isn't
+  there yet, the entry files without the links and the report says so.
+  "Check again" runs the search later and adds them.
+- **Without email access the entry still files** with what the image or
+  page shows. Email joins the table of capabilities and what breaks
+  without each one.
+- Sending email stays out of scope. Reading one receipt after the user
+  says yes is in.
+
 ## 0.22.0 — 2026-11-01
 
 A confirmed entry shows its order number, so the user can find the order
