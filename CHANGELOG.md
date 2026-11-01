@@ -4,6 +4,17 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.22.0 — 2026-11-01
+
+A confirmed entry shows its order number, so the user can find the order
+at the door without searching email.
+
+- **The number sits on its own line right under Venue,** labeled the way
+  the receipt labels it, such as `Order Number: 12345678`.
+- **It is the one personal detail a confirmed entry carries.** The
+  user's name, the ticket count and the payment stay out, as on every
+  hold. The reread before filing now allows this one line.
+
 ## 0.21.0 — 2026-11-01
 
 A ticket now files as a confirmed plan. When the image or page shows

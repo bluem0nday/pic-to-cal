@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.21.0
+version: 0.22.0
 description: Turns an event image (screenshot, flyer, poster, photo) or an event-page URL into a Google Calendar HOLD with the registration link embedded. Invoked as "pic-to-cal" or "pic to cal". Trigger when an image is attached AND the user asks to put it on the calendar, in any phrasing: "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal". Pasted or dragged desktop screenshots count as attached images. Also trigger on an event-page URL paired with a filing ask: "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image or event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If a trigger phrase arrives with no image and no URL, ask for one rather than running the skill.
 ---
 
@@ -101,10 +101,11 @@ A hold exists so the user can decide later. A ticket means they already decided.
 
 - **The title.** `📌 🎟 Confirmed: [event title]`. The 🎟 goes after the pin, and `Confirmed:` takes the place of `Hold:`. This is the one exception to step 8's rule that every hold says `📌 Hold:`. The pin stays, so everything the skill files still lines up in a month view. A private run reads `📌 🤫 🎟 Confirmed: [event title]`, in that order: pin, 🤫, 🎟, word, name.
 - **Busy.** `availability` is `AVAILABILITY_BUSY`. A hold stays Free so a placeholder never makes the user look booked. A ticket is a seat the user paid for.
+- **The order number (v0.22.0).** It sits on its own line right under Venue, labeled the way the receipt labels it: `Order Number: 12345678`, `Confirmation #: 12345678`. The user needs it at the door, and searching email for it there is slow. It is the one personal detail a confirmed entry carries. The user's name, the ticket count, and the payment stay out, as on every hold. When the input shows no number, the line is left out.
 - **No availability check.** Step 5's sold-out and waitlist checks are skipped, and the title never carries SOLD OUT or WAITLIST ONLY. The user already has tickets, so either marker would mislead.
 - **The confirm and the report.** The step-7 Title line shows the confirmed title, and a `Show as: Busy` line follows the Calendar line. The step-9 report opens `Filed:` instead of `HOLD filed:`.
 
-**What stays the same:** verification, the exact-copy Details block, the end-time ladder, the guest check, Private visibility, and no attendees. The ticket and the event page are both sources. When they agree, the entry earns ✓ against the page as usual.
+**What stays the same:** verification, the exact-copy Details block, the end-time ladder, the guest check (apart from the order-number line), Private visibility, and no attendees. The ticket and the event page are both sources. When they agree, the entry earns ✓ against the page as usual.
 
 The run that set it: a BAM order confirmation for a screening that night. It filed as `📌 Hold:` and Free, and the user set the rule. A two-page ticket PDF in August first raised the question.
 
@@ -375,9 +376,9 @@ On a confirmed entry the Title line shows `📌 🎟 Confirmed: [event title]`, 
 
 **Sourcing rule for everything in the invite (2026-07-05):** every fact traces to the image or a page checked during this run. Never add background knowledge — genre labels, artist facts, venue lore — no matter how confident. If it isn't in a source the user can open, it doesn't go in. (The cut that set the rule: "house/dance" as a genre gloss on a Dom Dolla show — true, but sourced from the model, not the flyer or pages.) Synthesis lines like Topic re-say the sources' own words, nothing more. The only exception: resolving a named venue to its standard street address for geocoding — that's plumbing, not content.
 
-**The user's life is not a source — and neither is their calendar (2026-07-28).** HOLDs get forwarded to friends; the body carries nothing about the user. No family, travel, health, or schedule context, and nothing read from the calendar (nearby events, past invites, who's in town) — even when it's why the hold exists. That belongs in the chat reply. Calendar read access is for filing mechanics only (destination, timezone). (Set by a real cut: a family-visit note with flight details, sourced from a nearby calendar event.)
+**The user's life is not a source — and neither is their calendar (2026-07-28).** HOLDs get forwarded to friends; the body carries nothing about the user. No family, travel, health, or schedule context, and nothing read from the calendar (nearby events, past invites, who's in town) — even when it's why the hold exists. That belongs in the chat reply. Calendar read access is for filing mechanics only (destination, timezone). (Set by a real cut: a family-visit note with flight details, sourced from a nearby calendar event.) One exception: a confirmed entry's order-number line (2026-11-01, see "Confirmed entries").
 
-**Guest check — always the last step before creating the event, even on runs that skip the confirm (2026-07-28).** Reread the finished body as if you're a friend who just received the invite, and ask two things: is everything in it on the event's own page (or image)? Is any of it about the user? The answers must be **yes** and **no**, or the failing line gets deleted — not reworded. This is the same reread the user does before forwarding a hold to a friend.
+**Guest check — always the last step before creating the event, even on runs that skip the confirm (2026-07-28).** Reread the finished body as if you're a friend who just received the invite, and ask two things: is everything in it on the event's own page (or image)? Is any of it about the user? The answers must be **yes** and **no**, or the failing line gets deleted — not reworded. This is the same reread the user does before forwarding a hold to a friend. A confirmed entry's order-number line passes the check (2026-11-01).
 
 **Every piece of text appears once (2026-10-05).** The body never carries the same text twice. Before writing it, decide which source leads Details:
 
@@ -402,13 +403,15 @@ Use the Google Calendar `create_event` tool with:
 - **description**: HTML, structured like this. **Formatting caution:** Google Calendar renders *both* `<br>` tags and literal newline characters as line breaks, so never put an actual newline next to a `<br>` in the description string — you'll get double-spacing. Keep each block's markup contiguous (no literal line breaks inside it); use `<br>` alone for a single line break and `<br><br>` for a blank line. Let the `<p>` tags handle spacing *between* sections. Never use `<pre>` (2026-10-05): it never wraps a line, and Calendar cuts long lines off at the right edge of the event panel.
 
 ```html
-<!-- BODY ORDER (2026-07-20, remember-first): the HOLD helps the user remember and decide, not push a purchase. The event's own content leads; the action link sits below it, deliberately. Order: [availability, if unavailable] → Venue → Details → also-in-the-image → cautions → summary → action link (+ price) → enrichment → source → footer. No transcription block (2026-10-05). -->
+<!-- BODY ORDER (2026-07-20, remember-first): the HOLD helps the user remember and decide, not push a purchase. The event's own content leads; the action link sits below it, deliberately. Order: [availability, if unavailable] → Venue → [order number, confirmed entries only] → Details → also-in-the-image → cautions → summary → action link (+ price) → enrichment → source → footer. No transcription block (2026-10-05). -->
 <!-- NOTHING TWICE (2026-10-05): see "Every piece of text appears once" above the field list. It decides whether the page or the image leads Details. -->
 
 <p><b>🎟 SOLD OUT</b> — [what the page said], checked [YYYY-MM-DD]. [Whether it may change.]</p>
 <!-- TOP LINE ONLY when the event is sold out / waitlist-only / sales ended (2026-08-05, step 5). It outranks Venue because it changes what the rest of the body is for. Everything else about availability — remaining-ticket counts, "N spots left" — stays a normal 🎟 caution line in the block below; this line is reserved for unavailable. Omit it entirely otherwise. -->
 <p><b>Venue:</b> [venue name] — <a href="[venue URL]">[venue URL]</a></p>
 <!-- The venue's own site or profile, when the image or a checked page surfaces one. Skip the line when there's no venue URL. -->
+<p><b>[the receipt's own label, e.g. Order Number]:</b> [number]</p>
+<!-- CONFIRMED ENTRIES ONLY (2026-11-01, v0.22.0): right under Venue, labeled the way the receipt labels it. Omit on a hold, and omit when the input shows no number. -->
 
 <p><b>Details (from the [source]):</b><br>
 <!-- Name the actual source in the label: "(from the Spectacle page)" when the page leads, or "(from the flyer)", "(from the screenshot)", "(from the email)", "(from the text)" when the image leads. "Details" is the generic header; the parenthetical keeps the provenance. -->
