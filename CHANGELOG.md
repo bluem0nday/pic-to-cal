@@ -4,6 +4,28 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.21.0 — 2026-11-01
+
+A ticket now files as a confirmed plan. When the image or page shows
+proof of purchase, the title reads `📌 🎟 Confirmed:` and the time
+shows as Busy.
+
+- **Proof of purchase** is an order or confirmation number, an "Order
+  Confirmation" heading, a receipt, or a ticket with a QR code. An event
+  page with a Tickets button is still a hold.
+- **The title changes because the decision is made.** "Hold" means the
+  user has not decided yet. The pin stays, so everything the skill files
+  still lines up in a month view. A private run reads
+  `📌 🤫 🎟 Confirmed:`.
+- **Busy instead of Free.** A hold stays Free so a placeholder never
+  makes the user look booked. A ticket is a seat the user paid for, so
+  the calendar now shows them as out.
+- **The sold-out check is skipped.** A SOLD OUT title would mislead on
+  an event the user holds tickets to.
+- The run that settled it: a BAM order confirmation for a screening that
+  night. It filed under the old `📌 Hold:` title, and the user set the
+  rule. A ticket PDF in August first raised the question.
+
 ## 0.20.0 — 2026-10-05
 
 A hold no longer shows the same text twice. When the event page says
