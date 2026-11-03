@@ -4,6 +4,41 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.26.0 — 2026-11-03
+
+The skill now starts on what the user wants, whatever the input. Before
+this, it needed an image or an event-page link, and words alone got a
+request for one.
+
+- **Starting on intent.** The skill runs when the user wants an event on
+  the calendar or wants to change one already there: an image, a link, a
+  ticket PDF, an email, or words alone. A bare URL with no ask, an image
+  with no ask, and the broad capture phrases still never start it. When
+  the ask names no event Claude can find, the skill asks which one.
+- **The words decide the action, and the input decides the facts.**
+  "I got tickets" and "I'm not going" name an action. "Calendar this"
+  leaves the action to the input and the lookup.
+- **PDF and email inputs.** A PDF is read from its text layer, then from
+  rendered pages for what that misses. Several pages are several tickets
+  to one event, unless they name different events. An order email is
+  proof of purchase. A mailing-list email or an invitation is an event.
+- **Words alone.** A date reads Event Holds on that day and the day
+  either side. A name or a venue searches the entries from today on.
+  Neither gets one question.
+- **The email search.** The user's own question or claim about tickets
+  counts as the yes for one receipt search. The search reads only the
+  messages whose sender or subject marks them as a receipt. When no
+  receipt turns up, the skill asks before it changes a hold to
+  Confirmed.
+- **A printed 12:00 AM.** A ticket, receipt or page that prints 12:00 AM
+  on a date files at 23:59 the day before, the same slot as a flyer's
+  MIDNIGHT. Saturday 12:00 AM is late Friday night, so the entry lands
+  on the right night and the lookup finds a hold filed from the flyer.
+- **When the receipt adds nothing.** The Add to Confirmed report says
+  the entry already has what the receipt gives.
+- **A new description,** under the 1,024-character upload limit, with
+  the new inputs and phrasings. Every exclusion stays.
+
 ## 0.25.0 — 2026-11-02
 
 A hold changes to Confirmed when the tickets arrive, and stays one entry.

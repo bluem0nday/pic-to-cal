@@ -1,12 +1,12 @@
 ---
 name: pic-to-cal
-version: 0.25.0
-description: Turns an event image (screenshot, flyer, poster, photo) or an event-page URL into a Google Calendar HOLD with the registration link embedded. Invoked as "pic-to-cal" or "pic to cal". Trigger when an image is attached AND the user asks to put it on the calendar, in any phrasing: "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal". Pasted or dragged desktop screenshots count as attached images. Also trigger on an event-page URL paired with a filing ask: "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image or event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If a trigger phrase arrives with no image and no URL, ask for one rather than running the skill.
+version: 0.26.0
+description: Files and updates event entries on Google Calendar: a Hold for an event the user might attend, and a Confirmed entry once they have tickets. Invoked as "pic-to-cal" or "pic to cal". Trigger on intent, whatever the input: an event image (screenshot, flyer, poster, photo), an event-page or ticket link, a ticket PDF, a receipt or order email, or words alone. Phrasings include "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "I got tickets", "add the tickets to the hold", "did I get tickets for", "I'm not going to". Pasted or dragged screenshots count as attached. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If the ask names no event Claude can find, ask which one.
 ---
 
 # pic-to-cal
 
-Take an attached event image — or an event-page URL — find the official registration URL, and create a HOLD on the "Event Holds" Google Calendar (or the primary calendar when no "Event Holds" calendar exists — see step 8) so it doesn't get lost. Both `pic-to-cal` and `pic to cal` are correct names for the skill.
+Take an event image, an event-page URL, a ticket PDF, an email, or the user's own words, find the official registration URL, and create a HOLD on the "Event Holds" Google Calendar (or the primary calendar when no "Event Holds" calendar exists — see step 8) so it doesn't get lost. When the event is already there, change that entry instead (see "Actions on a found entry"). Both `pic-to-cal` and `pic to cal` are correct names for the skill.
 
 ## Why this skill exists
 
@@ -28,29 +28,38 @@ Also in scope since v0.24.0 (2026-11-02): **the lookup**. Before any create, the
 
 Also in scope since v0.25.0 (2026-11-02): **the two states and the actions on a found entry**. A hold changes to Confirmed when proof of purchase arrives, later proof adds to a Confirmed entry, and the user can remove an entry. See "The two states" and "Actions on a found entry" below.
 
+Also in scope since v0.26.0 (2026-11-03): **starting on intent**. The skill starts when the user wants an event on the calendar or wants to change one that is there, whatever the input: an image, a link, a ticket PDF, an email, or words alone. See "Trigger contract" and "Starting from words" below.
+
 ## What's out of scope (do not build)
 
-Multi-day events, matching entries that other apps add to the calendar, changing a Confirmed entry back to a Hold (Remove covers a user who is no longer going), recurring detection, T-2 re-verification, eval/QA checks, RSVP actions, sending email or acting on it (RSVPs, replies), scheduled tasks, first-run setup. Those are later versions. If a user request implies one of these, say so and stop — don't improvise. Reading one receipt for a confirmed entry, after the user says yes, is in scope since v0.23.0 (see "Confirmed entries").
+Multi-day events, matching entries that other apps add to the calendar, changing a Confirmed entry back to a Hold (Remove covers a user who is no longer going), recurring detection, T-2 re-verification, eval/QA checks, RSVP actions, sending email or acting on it (RSVPs, replies), scheduled tasks, first-run setup. Those are later versions. If a user request implies one of these, say so and stop — don't improvise. Reading email is in scope: a receipt for a confirmed entry since v0.23.0 (see "Confirmed entries"), and an email as the input since v0.26.0 (see "Trigger contract").
 
 ## Trigger contract
 
-Two kinds of input start the workflow (URL input added 2026-07-28, Test 16 — three Film Forum pages filed clean; the iOS share-intent app receives URLs more often than images, so this is the app's primary path, not a bolt-on).
+**The skill starts on intent (2026-11-02).** It runs when the user wants an event on the calendar, or wants to change one that is there, whatever form the input takes. Read what the user wants, never a fixed phrase or word order, as private mode does.
 
-**Image input** — the original case:
-- An image is attached to the user's message
-- AND the message contains one of the trigger phrases (see the description field above)
+**What never starts it.**
 
-**URL input:**
-- The message contains one or more event-page URLs
-- AND a trigger phrase or an explicit filing instruction in any phrasing ("put a hold for this", "calendar this link", "pic to cal this URL")
+- A bare pasted URL with no ask. The user may be doing something else with it.
+- An image with no ask. The user is using a different skill or talking conversationally.
+- The broad capture phrases, such as "save this" or "add this" with no event context. Those belong to quick-capture.
+- A headshot, a company logo, or a screenshot of a chat message. Step 2 routes them.
 
-A bare pasted URL with no ask does NOT trigger — same reasoning as image-with-no-phrase: the user may be doing something else with it. Several URLs in one message = one HOLD per URL, each with its own body and report (same shape as two-events-on-one-flyer, 2026-07-21).
+**When the ask names no event Claude can find,** ask one question: `Which event?` Never ask for an image and stop.
 
-If a trigger phrase arrives with neither an image nor a URL, do not start the workflow. Reply: "I need the image or an event-page link attached — can you re-send?"
+**The words decide the action, and the input decides the facts.** Words that name an action win: "I got tickets", "we're going", "I'm not going", "hold it for now". Plain filing words name no action, so "calendar this" and "pic to cal" leave the action to the input and the lookup. The phone app gets no words, so there the input always decides.
 
-**One request needs no image or link (2026-11-02): removing an entry.** "I'm not going to that show", "I sold my tickets", "delete that hold". It runs Remove (see "Actions on a found entry").
+**What each input usually is.**
 
-If an image is attached but the message contains no trigger phrase, do not start the workflow. The user is using a different skill or talking conversationally.
+- **An image.** A flyer, poster or event screenshot is an event. A receipt or ticket is proof of purchase, by the cues in "Confirmed entries". A screenshot of an email reads as that email.
+- **A link.** An event page or a ticket-sale page is an event. A link that opens the user's own order or tickets is proof. Links came in on 2026-07-28 (Test 16), and they are the iOS share-intent app's primary path.
+- **A PDF.** A ticket or receipt is proof. A program or flyer is an event. Step 1 says how to read it.
+- **An email.** An order confirmation or ticket email is proof. A mailing-list email or an invitation is an event. Step 1 says how to read it.
+- **Words alone.** The user names the event and the action. See "Starting from words".
+
+When an input reads both ways, ask before the confirm: `Do you have tickets for this? (yes / no)`.
+
+Several URLs in one message = one HOLD per URL, each with its own body and report (same shape as two-events-on-one-flyer, 2026-07-21).
 
 **What URL input changes downstream (map, details in each step):** step 1 reads the page word for word instead of transcribing pixels; most of steps 4–6 doesn't apply (the URL is the source — no search); the verification footer becomes the nothing-added promise (see "Verification status"); everything else — body structure, sourcing rules, calendar mechanics — runs unchanged.
 
@@ -111,7 +120,7 @@ A hold exists so the user can decide later. A ticket means they already decided.
 - **No availability check.** Step 5's sold-out and waitlist checks are skipped, and the title never carries SOLD OUT or WAITLIST ONLY. The user already has tickets, so either marker would mislead.
 - **The confirm and the report.** The step-7 Title line shows the confirmed title, and a `Show as: Busy` line follows the Calendar line. The step-9 report opens `Filed:` instead of `HOLD filed:`.
 
-**The receipt from email (v0.23.0).** On every confirmed filing, ask one question before the confirm: `Search your email for the order confirmation? (yes / no)`. Never search without a yes. The question asks even on the URL path that skips the confirm. On a yes, search for the matching receipt (the seller or venue, the event title, and the order number when known) and read only that message. From it take:
+**The receipt from email (v0.23.0).** On every confirmed filing, ask one question before the confirm: `Search your email for the order confirmation? (yes / no)`. Never search without a yes. The question asks even on the URL path that skips the confirm. One exception (2026-11-02): the user's own question or claim about tickets counts as the yes for one search. "Did I get tickets?", "I think I got tickets", "I got tickets" and "Where are my tickets?" all count. On a yes, search for the matching receipt (the seller or venue, the event title, and the order number when known) and read only that message. From it take:
 
 1. The order number, when the input didn't show it.
 2. Each ticket link the receipt gives ("View tickets", "Add to Wallet", "Download tickets"), labeled the way the email labels it. A receipt with one link per ticket gets one line per link.
@@ -206,7 +215,7 @@ The lookup runs first. What it found and what the input is decide the action.
 | Nothing to Hold | An event | Nothing |
 | Nothing to Confirmed | Proof of purchase | Nothing |
 | Already held | An event | A Hold |
-| Hold to Confirmed | Proof of purchase | A Hold |
+| Hold to Confirmed | Proof of purchase, or the user's word and a yes to the fallback question | A Hold |
 | Add to Confirmed | Proof of purchase, or "check again" | A Confirmed entry |
 | Already confirmed | An event | A Confirmed entry |
 | Remove | The user's word | Either state |
@@ -226,7 +235,8 @@ Each action reports the way step 9 does: one line that links the entry, plus one
 
 **Hold to Confirmed.** Proof of purchase for a held showtime. It happens on the proof, and the report says what changed.
 
-- **Before the change,** ask the receipt question from "Confirmed entries": `Search your email for the order confirmation? (yes / no)`.
+- **The user's word alone is not proof.** A claim of tickets sends Claude to the receipt (see "Starting from words"). When no receipt turns up, ask once: `No receipt found for IN THE WOODS. Change it to Confirmed anyway? (yes / no)`. A yes covers tickets that live in an app or on someone else's account.
+- **Before the change,** ask the receipt question from "Confirmed entries": `Search your email for the order confirmation? (yes / no)`. Skip it when the user's words about tickets already count as the yes.
 - **The title:** `Hold:` becomes `🎟 Confirmed:` after the pin. A SOLD OUT or WAITLIST ONLY marker drops. The 🤫 and the name stay.
 - **Free becomes Busy.**
 - **The body loses** the top availability line, the action line with its price and status, and any 🎟 availability caution.
@@ -243,9 +253,42 @@ You also have holds for IN THE WOODS on Oct 12 and Oct 28. Delete them or leave 
 
 Delete removes every hold listed with `delete_event`, notifications off. Leave changes nothing. When a hold has a guest, the question says so, because deleting it takes it off the guest's calendar too.
 
-**Add to Confirmed.** Later proof for an entry that is already Confirmed: the receipt email arriving after the screenshot, a wallet link, or "check again". Add the booking lines the entry lacks, and repeat none it has. Clear any hold text, by rule 2.
+**Add to Confirmed.** Later proof for an entry that is already Confirmed: the receipt email arriving after the screenshot, a wallet link, or "check again". Add the booking lines the entry lacks, and repeat none it has. Clear any hold text, by rule 2. When the receipt adds no line, the report says the entry already has what the receipt gives.
 
 **Remove.** The user's words: "I'm not going to that show", "I sold my tickets", "delete that hold". Find the entry the words name on Event Holds. When more than one could be it, ask which. Then name the entry and ask first, saying so when it is Confirmed or has a guest: `Delete 📌 Hold: THE CURSE OF HER FLESH (Spectacle Theater) on Oct 23? (yes / no)`. Never delete without that yes. On a yes, delete it with `delete_event`, notifications off.
+
+## Starting from words (2026-11-02)
+
+Words alone carry no image to transcribe, and often too little for the lookup. Work with what they give, in this order:
+
+1. **A date:** list Event Holds on that date and on the day either side, since a remembered date can be off by a day.
+2. **No date, but a name or a venue:** search the Event Holds entries from today on for it.
+3. **Neither:** ask one question: `Which event?`
+
+The same three steps find the entry for Remove.
+
+**When the words are about tickets,** search email for a receipt. The words count as the yes (see "Confirmed entries"). Search on each candidate's name and venue, and read only the messages whose sender or subject marks them as a receipt, such as "Your tickets" or "Order confirmation". A release notice or a forwarded copy is not the receipt. Then say what was found in one message:
+
+- **A receipt matches one candidate** on name, venue and date: that receipt picks the entry. A Hold changes to Confirmed, and a Confirmed entry gets Add to Confirmed. The report links the entry.
+- **No receipt turns up:** when more than one candidate is left, ask which one. Then ask the fallback question from Hold to Confirmed.
+
+For example, "I think I got tickets for a concert on the 7th" lists Event Holds from the 6th to the 8th. "Concert" matches no title, so every entry there stays a candidate. The email search finds one receipt that matches one entry on name, venue and date, and that entry changes to Confirmed. Without the receipt, the skill lists the candidates and asks which one.
+
+**What asks first.**
+
+- Remove, and deleting the other showtimes.
+- The lookup's ask answer.
+- Updating a held entry's times.
+- Hold to Confirmed when no receipt turns up.
+- Any email search the user's own words did not ask for.
+
+**What happens, and is reported after.**
+
+- Hold to Confirmed on proof.
+- Add to Confirmed.
+- Already held and Already confirmed, which change nothing.
+
+New entries keep step 7's confirm rules.
 
 ## The workflow
 
@@ -273,6 +316,10 @@ Transcription:
 ```
 
 **URL input: read the page, don't transcribe (2026-07-28, Test 16; browser-first since 2026-08-07).** For a URL, step 1 is one browser read of the page, captured verbatim — the page text plays the transcription's role everywhere downstream. Three rules: (1) Read it in the browser, not a fetcher. The Details block needs the venue's own sentences and a summarizer cannot promise them; asking harder is not a fix (step 5). (2) The frame rule applies to pages too: capture the event's own content, not site chrome, navigation, or other events listed on the page. (3) Skip the transcription display — the user sent the page, they can open it — and the body carries no transcription block; the Source link replaces it.
+
+**PDF input (2026-11-02).** Read the text layer first, then render the pages for what it misses, such as a QR code or text set as an image. Several pages are several tickets to one event, unless the pages name different events. Show the transcription as for an image.
+
+**Email input (2026-11-02).** Read the email the user names or forwards. Its text plays the transcription's role, and the run goes on as for an image. Skip the transcription display, since the user has the email.
 
 ### Step 2: Decide if this is actually an event
 
@@ -303,7 +350,7 @@ From the transcription, pull:
   Verification still means something on this path, and the badge is earned the normal way: the identity fields have to match across the two sources. When the image's titles, directors, years, and runtimes all line up with the page's, that is real corroboration and the hold is ✓ Verified — the page simply also happens to be the only source for the dates. Say so in the footer rather than letting the badge imply the dates were cross-checked: `✓ Verified against [URL] on [date] — the screenshot announced the lineup with no dates; the [page] supplied the schedule.` If the identity fields *don't* match, the page is about something else — keep looking or file Unverified, same as always.
 
   Two stopping rules. If no schedule page can be found, there is nothing to file: an announcement with no recoverable date is not an event, so say that plainly and stop rather than inventing a placeholder day. And when the page lists several showtimes per title, this is the multi-event case from step 1 — transcribe once, show the grid, and ask in one question which showtimes to hold. Each chosen showtime becomes its own HOLD with the shared transcription, exactly like two-events-on-one-flyer.
-- **Start time** and **end time** — 24-hour. A "midnight" screening belongs to the calendar day printed on the flyer. File it at `23:59` on the listed date — that keeps the event on the day the flyer names and in the real late-night slot, instead of jumping to `00:00` the following morning. (For Spectacle, "FRIDAY, MAY 29 – MIDNIGHT" → start `2026-05-29 23:59`. The end time can roll past midnight; a 60-min film ends `2026-05-30 00:59`.) **Try the page before falling back.** When the image is missing a start or end time, don't jump straight to a default — step 5 reads the event page, so pull the real time from there if a verifiable page exists. Precedence for every time field: image → else verified page → else the fallbacks below. Only use a fallback when neither the image nor a page supplies the value.
+- **Start time** and **end time** — 24-hour. A "midnight" screening belongs to the calendar day printed on the flyer. File it at `23:59` on the listed date — that keeps the event on the day the flyer names and in the real late-night slot, instead of jumping to `00:00` the following morning. (For Spectacle, "FRIDAY, MAY 29 – MIDNIGHT" → start `2026-05-29 23:59`. The end time can roll past midnight; a 60-min film ends `2026-05-30 00:59`.) **A printed 12:00 AM (2026-11-03).** A ticket, a receipt or a page that prints 12:00 AM on a date means the end of the night before: Saturday 12:00 AM is late Friday night. File it at `23:59` on the day before, the same slot as a flyer's MIDNIGHT. The entry then lands on the night the user goes out, and the lookup finds a hold filed from the flyer. **Try the page before falling back.** When the image is missing a start or end time, don't jump straight to a default — step 5 reads the event page, so pull the real time from there if a verifiable page exists. Precedence for every time field: image → else verified page → else the fallbacks below. Only use a fallback when neither the image nor a page supplies the value.
 
 **Missing end time — the hold is a convention, not a prediction (2026-07-20; revised 2026-07-21 after a 7 PM–4 AM block over-claimed a bar-venue show: the venue's close answers "when does the building shut," not "when does the show end").** When the image and the event page give a start but no end, work down this list and stop at the first hit. Every derived end time carries a labeled, dated line in the body.
 
@@ -636,11 +683,11 @@ That's it. Don't summarize what was done. Don't list the description fields back
 - **Google Calendar `list_events`** (MCP connector): for the lookup, which reads Event Holds around the input's date (2026-11-02). `update_event` also changes a held entry's times after the user says yes, and carries out the actions on a found entry.
 - **Google Calendar `delete_event`** (MCP connector): for Remove and for a delete answer about the other showtimes, only after the user's yes (2026-11-02).
 
-- **Email search and read** (Gmail connector): confirmed entries only, after the user says yes. It reads one receipt and never sends (2026-11-01).
+- **Email search and read** (Gmail connector): for a receipt, after the user's yes or their own words about tickets (2026-11-01, widened 2026-11-02), and for an email the user names as the input (2026-11-02). It never sends.
 
 - **`private-scrub.sh`** (shell script in this folder, private runs only) — the one-step transcript cleanup that closes a private run, pre-approved by a project permission rule so it runs without prompts (2026-08-12).
 
-That's the full toolkit. Reading pages takes either the browser or the fetcher, and the skill needs one of the two: the browser by default, the fetcher only when there's no browser. Email is optional too: it only adds receipt details to confirmed entries. So is `list_events`: without it the skill files as before and says the lookup didn't run. So is `delete_event`: without it nothing is deleted, and the skill says so. Every other tool is required — if a required tool is unavailable, stop and say which one is missing, don't try to work around it.
+That's the full toolkit. Reading pages takes either the browser or the fetcher, and the skill needs one of the two: the browser by default, the fetcher only when there's no browser. Email is optional too: without it, receipts and email inputs can't be read. So is `list_events`: without it the skill files as before and says the lookup didn't run. So is `delete_event`: without it nothing is deleted, and the skill says so. Every other tool is required — if a required tool is unavailable, stop and say which one is missing, don't try to work around it.
 
 ### What breaks when a capability is missing
 
@@ -655,7 +702,7 @@ This spec is also the spec for a phone app, and the phone won't have the same to
 | Calendar write | Nothing files. Required — stop and say so. |
 | Calendar read (`list_events`) | The lookup can't run, so a second filing can make a second entry. File as before, and add one line to the report: `Couldn't check Event Holds for an entry that already covers this.` (2026-11-02) |
 | Calendar delete (`delete_event`) | Remove and the delete answer can't run. The entry stays, and the report says: `Couldn't delete it. Delete it in Google Calendar.` (2026-11-02) |
-| Email read | Confirmed entries file with what the image or page shows: the order number only when the input printed it, and no ticket or receipt links. Skip the email question (2026-11-01). |
+| Email read | Confirmed entries file with what the image or page shows: the order number only when the input printed it, and no ticket or receipt links. Skip the email question (2026-11-01). Words about tickets go straight to the fallback question, and an email input can't be read, so ask for a screenshot of it (2026-11-02). |
 | Transcript deletion (`private-scrub.sh`) | Private mode still keeps its whole promise about this project's records, which is the part that lasts. Only the cleanup is lost: the conversation stays in the runtime's own history until its retention clears it. Say that at the end of the run instead of reporting a cleanup that didn't happen (2026-08-07). |
 
 Two rules follow from the table, and they hold in any runtime. Verification is never assumed: absent proof, the hold says so in words rather than filing a confident-looking guess — which is how the "detail, never correctness" promise survives a missing capability, by downgrading the badge rather than trying harder. And enrichment is never load-bearing: if a block of body copy would change the date, time, or place, it isn't enrichment — it belongs to verification and needs a readable source.
