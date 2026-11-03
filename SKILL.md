@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.24.0
+version: 0.25.0
 description: Turns an event image (screenshot, flyer, poster, photo) or an event-page URL into a Google Calendar HOLD with the registration link embedded. Invoked as "pic-to-cal" or "pic to cal". Trigger when an image is attached AND the user asks to put it on the calendar, in any phrasing: "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "pic to cal". Pasted or dragged desktop screenshots count as attached images. Also trigger on an event-page URL paired with a filing ask: "put a hold for this", "calendar this link", "pic to cal" plus a URL. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no image or event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If a trigger phrase arrives with no image and no URL, ask for one rather than running the skill.
 ---
 
@@ -26,9 +26,11 @@ Also in scope since v0.21.0 (2026-11-01): **proof of purchase**, such as an orde
 
 Also in scope since v0.24.0 (2026-11-02): **the lookup**. Before any create, the skill checks Event Holds for an entry that already covers the event, and reports that entry instead of filing a second one. See "The lookup" below.
 
+Also in scope since v0.25.0 (2026-11-02): **the two states and the actions on a found entry**. A hold changes to Confirmed when proof of purchase arrives, later proof adds to a Confirmed entry, and the user can remove an entry. See "The two states" and "Actions on a found entry" below.
+
 ## What's out of scope (do not build)
 
-Multi-day events, matching entries that other apps add to the calendar, recurring detection, T-2 re-verification, eval/QA checks, RSVP actions, sending email or acting on it (RSVPs, replies), scheduled tasks, first-run setup. Those are later versions. If a user request implies one of these, say so and stop — don't improvise. Reading one receipt for a confirmed entry, after the user says yes, is in scope since v0.23.0 (see "Confirmed entries").
+Multi-day events, matching entries that other apps add to the calendar, changing a Confirmed entry back to a Hold (Remove covers a user who is no longer going), recurring detection, T-2 re-verification, eval/QA checks, RSVP actions, sending email or acting on it (RSVPs, replies), scheduled tasks, first-run setup. Those are later versions. If a user request implies one of these, say so and stop — don't improvise. Reading one receipt for a confirmed entry, after the user says yes, is in scope since v0.23.0 (see "Confirmed entries").
 
 ## Trigger contract
 
@@ -45,6 +47,8 @@ Two kinds of input start the workflow (URL input added 2026-07-28, Test 16 — t
 A bare pasted URL with no ask does NOT trigger — same reasoning as image-with-no-phrase: the user may be doing something else with it. Several URLs in one message = one HOLD per URL, each with its own body and report (same shape as two-events-on-one-flyer, 2026-07-21).
 
 If a trigger phrase arrives with neither an image nor a URL, do not start the workflow. Reply: "I need the image or an event-page link attached — can you re-send?"
+
+**One request needs no image or link (2026-11-02): removing an entry.** "I'm not going to that show", "I sold my tickets", "delete that hold". It runs Remove (see "Actions on a found entry").
 
 If an image is attached but the message contains no trigger phrase, do not start the workflow. The user is using a different skill or talking conversationally.
 
@@ -115,7 +119,9 @@ A hold exists so the user can decide later. A ticket means they already decided.
 
 These lines go under the order number, in that order. Some ticket links open without a login, so anyone who receives a forwarded entry may be able to open the tickets.
 
-Receipts often arrive after the screenshot. When the receipt isn't there yet, file without these lines and add one line to the report: `The receipt isn't in your email yet. Say "check again" to add the ticket links.` On "check again", search again and add the lines to the existing entry with `update_event`, notifications off. Nothing else in the entry changes.
+Receipts often arrive after the screenshot. When the receipt isn't there yet, file without these lines and add one line to the report: `The receipt isn't in your email yet. Say "check again" to add the ticket links.` On "check again", search again and add the lines to the existing entry: that is Add to Confirmed (see "Actions on a found entry").
+
+**No action line (2026-11-02).** A Confirmed entry carries no action line with a price and status. The ticket lines take its place (see "The two states").
 
 **What stays the same:** verification, the exact-copy Details block, the end-time ladder, the guest check (apart from the order-number, ticket-link, and Order email lines), Private visibility, and no attendees. The ticket and the event page are both sources. When they agree, the entry earns ✓ against the page as usual.
 
@@ -163,12 +169,83 @@ Which one?
 
 - **Already held:** the input is an event, and the entry is a Hold. The report opens `Already held:` (step 9). When the input gives a different start or end, the report says so and asks one question, with the real values: `The page now says 8 AM. The hold says 9 AM. Update the hold? (yes / no)`. Name the source the way it is: the page, the flyer, the screenshot. On a yes, change only the start and the end with `update_event`, notifications off, and give the footer the new check date. News the new read turns up, such as SOLD OUT, goes in the report and not in the entry.
 - **Already confirmed:** the input is an event, and the entry is Confirmed. The report opens `Already confirmed:`. Nothing changes.
-- **Proof of purchase for a held showtime.** The report opens `Already held:` and adds one line: `Changing a hold to Confirmed isn't built yet. The hold is unchanged.` Nothing files.
-- **Proof of purchase for a Confirmed entry.** The report opens `Already confirmed:`. Nothing changes.
+- **Proof of purchase for a held showtime:** Hold to Confirmed (see "Actions on a found entry").
+- **Proof of purchase for a Confirmed entry:** Add to Confirmed (see "Actions on a found entry").
 
 **Private entries.** A 🤫 entry counts like any other. On a run that is not private, never write its title: the report and the ask list call it `a private entry on [Mon D]`, with its link.
 
-**What it never does.** It reads Event Holds and no other calendar. What it finds goes into chat and into the next step, never into a body. It changes only the found entry, and only after a yes. It never deletes.
+**What it never does.** It reads Event Holds and no other calendar. What it finds goes into chat and into the next step, never into a body. The lookup changes nothing by itself: only the actions below change an entry, and only the found one.
+
+## The two states (2026-11-02)
+
+Every entry the skill files has one state, and the title word carries it. The title is what the user scans, so the title is the record. Free or Busy and the body follow from the state.
+
+| | Hold | Confirmed |
+|---|---|---|
+| Means | The user might go. | The user has a place at this showtime. |
+| Title | `📌 Hold: [name]` | `📌 🎟 Confirmed: [name]` |
+| Shows as | Free | Busy |
+| The body is for | Deciding | Attending |
+| Leads with | The event's own words | The Venue line, then the lines that get the user in the door |
+| Buying | The action link, with its dated price and availability | None. The ticket lines take its place. |
+
+- **A place** is a ticket, a reservation or a confirmed RSVP, free ones included.
+- **A private run** adds 🤫 after the pin in both states.
+- **Both states keep** Details, Source, the dated footer and the calendar's default reminders.
+- **Set Free or Busy only when filing an entry or changing its state.** A hold the user marked Busy by hand stays the way they left it.
+- **A Confirmed body drops the lines written for deciding:** the action line with its price and status, and any 🎟 availability line. Details and Source stay, so a guest who wants a ticket is one tap from the event page.
+- **The title has one slot for news,** between the state word and the name, with a dash after it. Holds use it for SOLD OUT and WAITLIST ONLY, which never apply to a Confirmed entry. The body's top line, above Venue, is the news line in both states.
+- **Travel time stays out of both states,** and no action adds it. When the user asks for travel time on a run, add it to that entry only.
+
+## Actions on a found entry (2026-11-02)
+
+The lookup runs first. What it found and what the input is decide the action.
+
+| Action | The input | The lookup found |
+|---|---|---|
+| Nothing to Hold | An event | Nothing |
+| Nothing to Confirmed | Proof of purchase | Nothing |
+| Already held | An event | A Hold |
+| Hold to Confirmed | Proof of purchase | A Hold |
+| Add to Confirmed | Proof of purchase, or "check again" | A Confirmed entry |
+| Already confirmed | An event | A Confirmed entry |
+| Remove | The user's word | Either state |
+
+**Four rules for every action.**
+
+1. **One entry.** Change the found entry with `update_event`. Never file a second entry beside it.
+2. **The body ends in its state's shape** (see "The two states"). An action on an older entry also clears what its state drops.
+3. **Free or Busy changes only when the state changes.**
+4. **Notifications stay off** (`notificationLevel: NONE`). Guests see the change when they open the entry.
+
+Each action reports the way step 9 does: one line that links the entry, plus one line for each thing that changed.
+
+**Nothing to Hold and Nothing to Confirmed** run the workflow as written. After Nothing to Confirmed, ask about the other showtimes (below).
+
+**Already held and Already confirmed** are in "The lookup".
+
+**Hold to Confirmed.** Proof of purchase for a held showtime. It happens on the proof, and the report says what changed.
+
+- **Before the change,** ask the receipt question from "Confirmed entries": `Search your email for the order confirmation? (yes / no)`.
+- **The title:** `Hold:` becomes `🎟 Confirmed:` after the pin. A SOLD OUT or WAITLIST ONLY marker drops. The 🤫 and the name stay.
+- **Free becomes Busy.**
+- **The body loses** the top availability line, the action line with its price and status, and any 🎟 availability caution.
+- **The body gains** the order number, the ticket links and the order email, under Venue. They come from the proof, and from the receipt after a yes.
+- **The start** takes the proof's time when the two differ, and the report says so. The end changes only when the proof prints an end or a runtime, by the end-time ladder in step 3.
+- **Everything else stays:** Details and the blocks under it, the ⏰ cautions, the ⏱ caution, Source, and the dated footer.
+- **When the entry has a guest,** the report says what the guest now sees: the new title and the booking lines. Some ticket links open without a login.
+
+**The other showtimes.** After Hold to Confirmed or Nothing to Confirmed, look for the other holds of the same run: every entry on Event Holds in the next 90 days that passes steps 2 and 3 of the lookup, other than this one. List Holds only, since a user can have tickets to two showtimes. When there are any, one question follows the report:
+
+```
+You also have holds for IN THE WOODS on Oct 12 and Oct 28. Delete them or leave them? (delete / leave)
+```
+
+Delete removes every hold listed with `delete_event`, notifications off. Leave changes nothing. When a hold has a guest, the question says so, because deleting it takes it off the guest's calendar too.
+
+**Add to Confirmed.** Later proof for an entry that is already Confirmed: the receipt email arriving after the screenshot, a wallet link, or "check again". Add the booking lines the entry lacks, and repeat none it has. Clear any hold text, by rule 2.
+
+**Remove.** The user's words: "I'm not going to that show", "I sold my tickets", "delete that hold". Find the entry the words name on Event Holds. When more than one could be it, ask which. Then name the entry and ask first, saying so when it is Confirmed or has a guest: `Delete 📌 Hold: THE CURSE OF HER FLESH (Spectacle Theater) on Oct 23? (yes / no)`. Never delete without that yes. On a yes, delete it with `delete_event`, notifications off.
 
 ## The workflow
 
@@ -233,7 +310,7 @@ From the transcription, pull:
 1. A close time published for **this exact event** (rare). Use it as-is.
 2. A **published running time for this exact event** — a film's minutes, listed lengths of the program's parts (2026-07-28, Test 16: three Film Forum screenings). End = start + the listed runtimes summed (feature + accompanying short/doc). Label: `⏱ End derived from the listed approx. [N]-min runtime — no allowance for trailers or an intro; may run later (checked [M/D])`. This stays on the right side of rung 4's no-formula ban because runtime is a per-event published fact, not world-knowledge — the source printed the number; nothing was inferred from event type. An announced live intro/Q&A with no listed length stays a caution ("may push the end later"), never a number.
 3. The **venue's posted hours** for that day — but ONLY when doors sit within ~5 hours of close, i.e. the event plausibly IS the venue's whole night (an 11 PM club program running to the 4 AM close). One search — hours routinely appear in snippets. Label: `⏱ Ends at venue's [day] close ([time], checked [M/D]) — no end time listed for this event`. When doors are further from close, the close time is context, not the end — it moves into the caution line and the block does not stretch to it.
-4. Otherwise: a **fixed 2-hour hold. Always.** Never scale it — not by start time, not by act count, not by event type. Any formula that converts flyer content into a duration smuggles in world-knowledge (how long sets, readings, or signings run — the flyer can't say), and a placeholder that varies "intelligently" starts to look like information, which readers will trust. A uniform convention is honest because it carries no false signal: the user learns once that a 2-hour hold with a ⏱ line means "end unknown." The caution line declares the convention and carries the real signals as facts, never converted into a number: `⏱ End unknown — the 2-hour hold is a placeholder, not a prediction; venue open till [time] [day] (checked [M/D])` (or `; venue posts no regular hours`).
+4. Otherwise: a **fixed 2-hour block. Always.** Never scale it — not by start time, not by act count, not by event type. Any formula that converts flyer content into a duration smuggles in world-knowledge (how long sets, readings, or signings run — the flyer can't say), and a placeholder that varies "intelligently" starts to look like information, which readers will trust. A uniform convention is honest because it carries no false signal: the user learns once that a 2-hour block with a ⏱ line means "end unknown." The caution line declares the convention and carries the real signals as facts, never converted into a number: `⏱ End unknown — the 2-hour block is a placeholder, not a prediction; venue open till [time] [day] (checked [M/D])` (or `; venue posts no regular hours`).
 
 The block should under-claim; the caution line carries the uncertainty and any known upper bound. An end that's modestly wrong-short beats one dramatically wrong-long — the user can stay later than the block, but a block that colonizes the whole evening misleads planning at a glance. Never hardcode an end from event-type knowledge ("clubs run till 3") — venues vary by night and lineup, and that's model knowledge, not a source.
 
@@ -505,6 +582,7 @@ Use the Google Calendar `create_event` tool with:
        register / registration → "Register"
      Show the literal URL as the visible link text (e.g. https://www.spectacletheater.com/ ), not a friendly title.
      PRICE (2026-07-20): quote it exactly as the ticket page prints it ("from $22"), dated, on this line. Never a structured Price field, never a number computed from tiers; when no price is shown anywhere, say nothing.
+     CONFIRMED ENTRIES (2026-11-02): omit this line. The ticket lines under Venue take its place.
      ONE LINK, ONCE (2026-07-21): if the best action link is a URL the body already carries (usually the Venue line, on unverified holds), drop the action line entirely — a repeated URL is noise, not emphasis. -->
 
 <p><b>Audience:</b> [audience if visible in image or on page]</p>
@@ -543,6 +621,8 @@ When the lookup found the entry (2026-11-02), the report opens `Already held:` o
 Already held: [📌 Hold: [event title] — [Mon D, time]]([calendar event URL])
 ```
 
+The actions on a found entry report the same way (2026-11-02). Hold to Confirmed opens `Changed to Confirmed:`, Add to Confirmed opens `Updated:`, and both link the entry. Remove opens `Deleted:` with the title and date, and no link, since the entry is gone.
+
 That's it. Don't summarize what was done. Don't list the description fields back. The clickable calendar link IS the deliverable — put it directly in the reply, every single time, formatted as a link the user can tap. Never make them ask for it, never make them go find the event in their calendar themselves (2026-07-04).
 
 ## Tools this skill uses
@@ -553,13 +633,14 @@ That's it. Don't summarize what was done. Don't list the description fields back
 - **web_fetch** — the stand-in reader when the session has no browser. Never the opening move (2026-08-07, step 5): it fails or returns unusable text on roughly half the sources this skill gets pointed at, and a browser read has to happen anyway for the exact-copy Details block.
 - **Google Calendar `create_event`** + **`update_event`** (MCP connector) — for step 8. Filing always takes both calls: `create_event` to make the HOLD, then `update_event` to set `location` (the connector reliably drops location on create). `list_calendars` is also used to resolve the destination calendar by name (step 8) and to read the user's home timezone for virtual events with no printed TZ.
 
-- **Google Calendar `list_events`** (MCP connector): for the lookup, which reads Event Holds around the input's date (2026-11-02). `update_event` also changes a held entry's times after the user says yes.
+- **Google Calendar `list_events`** (MCP connector): for the lookup, which reads Event Holds around the input's date (2026-11-02). `update_event` also changes a held entry's times after the user says yes, and carries out the actions on a found entry.
+- **Google Calendar `delete_event`** (MCP connector): for Remove and for a delete answer about the other showtimes, only after the user's yes (2026-11-02).
 
 - **Email search and read** (Gmail connector): confirmed entries only, after the user says yes. It reads one receipt and never sends (2026-11-01).
 
 - **`private-scrub.sh`** (shell script in this folder, private runs only) — the one-step transcript cleanup that closes a private run, pre-approved by a project permission rule so it runs without prompts (2026-08-12).
 
-That's the full toolkit. Reading pages takes either the browser or the fetcher, and the skill needs one of the two: the browser by default, the fetcher only when there's no browser. Email is optional too: it only adds receipt details to confirmed entries. So is `list_events`: without it the skill files as before and says the lookup didn't run. Every other tool is required — if a required tool is unavailable, stop and say which one is missing, don't try to work around it.
+That's the full toolkit. Reading pages takes either the browser or the fetcher, and the skill needs one of the two: the browser by default, the fetcher only when there's no browser. Email is optional too: it only adds receipt details to confirmed entries. So is `list_events`: without it the skill files as before and says the lookup didn't run. So is `delete_event`: without it nothing is deleted, and the skill says so. Every other tool is required — if a required tool is unavailable, stop and say which one is missing, don't try to work around it.
 
 ### What breaks when a capability is missing
 
@@ -573,6 +654,7 @@ This spec is also the spec for a phone app, and the phone won't have the same to
 | Page rendering (browser) | The fetcher becomes the reader, with all four of its failure shapes in play (step 5). Blocked and login-walled pages are unreadable. Enrichment is lost — price, captions, handles, FAQ detail. Verification against an unblocked, server-rendered page is unaffected. **Exact-copy Details is lost** on any page whose text the fetcher summarizes or refuses (2026-08-05): the body falls back to the credits and whatever short exact quote survived, plus the 📄 shortened-description line. **Verification itself is lost on a JS-rendered venue site** (2026-08-05, Test 18): the fetcher gets only site chrome, the venue's index of detail links never materializes, and there is no way to tell a stale or parallel listing from the right one — so the hold files as ⚠ Unverified with the venue link, never ✓. Dates and times then come from the image alone and say so. |
 | Calendar write | Nothing files. Required — stop and say so. |
 | Calendar read (`list_events`) | The lookup can't run, so a second filing can make a second entry. File as before, and add one line to the report: `Couldn't check Event Holds for an entry that already covers this.` (2026-11-02) |
+| Calendar delete (`delete_event`) | Remove and the delete answer can't run. The entry stays, and the report says: `Couldn't delete it. Delete it in Google Calendar.` (2026-11-02) |
 | Email read | Confirmed entries file with what the image or page shows: the order number only when the input printed it, and no ticket or receipt links. Skip the email question (2026-11-01). |
 | Transcript deletion (`private-scrub.sh`) | Private mode still keeps its whole promise about this project's records, which is the part that lasts. Only the cleanup is lost: the conversation stays in the runtime's own history until its retention clears it. Say that at the end of the run instead of reporting a cleanup that didn't happen (2026-08-07). |
 

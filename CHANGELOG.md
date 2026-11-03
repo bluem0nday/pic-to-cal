@@ -4,6 +4,35 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.25.0 — 2026-11-02
+
+A hold changes to Confirmed when the tickets arrive, and stays one entry.
+Before this, a ticket for a held show filed a second entry beside the
+hold.
+
+- **Two states, and the title carries the state.** A Hold is Free and
+  its body helps the user decide. A Confirmed entry is Busy and its body
+  gets the user in the door. Free or Busy is set only when an entry files
+  or changes state, so a hold marked Busy by hand stays that way.
+- **Hold to Confirmed.** Proof of purchase for a held showtime changes
+  the title to `📌 🎟 Confirmed:`, turns Free to Busy, drops the
+  action line with its price and any availability line, and adds the
+  order number and ticket links under Venue. Details, the cautions,
+  Source and the dated footer stay.
+- **The other showtimes.** After a change to Confirmed, the skill finds
+  the holds for the run's other showtimes and asks once whether to delete
+  them or leave them.
+- **Add to Confirmed.** Later proof, such as the receipt email or
+  "check again", adds the booking lines a Confirmed entry lacks and
+  repeats none.
+- **Remove.** "I'm not going" or "delete that hold" finds the entry,
+  names it, and deletes it only after a yes. This is the one request that
+  needs no image or link.
+- **Notifications stay off** on every change and delete. Guests see the
+  change when they open the entry.
+- The end-time caution now reads "the 2-hour block is a placeholder",
+  true in both states. `delete_event` joins the tools.
+
 ## 0.24.0 — 2026-11-02
 
 The skill now checks whether an event is already on the calendar before
