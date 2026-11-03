@@ -14,7 +14,8 @@ The part that makes it more than OCR: before filing, the skill finds the event's
 2. Extract structured fields: title, date, time, venue, links, live speakers.
 3. Find a source page. Printed URLs and social handles in the image are checked first, then web search, then the venue's own listing of links.
 4. Verify the image's facts against the page. Every filing lands in one of three honest states: **✓ Verified**, **⚠ Unverified** (a link exists but couldn't confirm the facts), or no page found. The state is labeled in the event body, per field where it matters.
-5. Show one confirm block (yes / no / fix), then file the hold. It goes to a calendar named "Event Holds" if one exists on your account, otherwise to your main calendar.
+5. Check "Event Holds" for an entry that already covers the event. When one does, the skill reports it and files nothing new.
+6. Show one confirm block (yes / no / fix), then file the hold. It goes to a calendar named "Event Holds" if one exists on your account, otherwise to your main calendar.
 
 Some of the rules the spec encodes, each earned by a real test case: a timezone printed on the flyer beats one derived from the venue; a "midnight" event starts at 23:59 on the day the flyer names, so it never jumps to the next day on the calendar; a date with no findable time files as an all-day banner and says so; people are listed as speakers only if they appear live at the event, so a film's cast never shows up as event speakers; a venue page whose dates or format don't match the picture is treated as a different showing, so its dates are never used.
 

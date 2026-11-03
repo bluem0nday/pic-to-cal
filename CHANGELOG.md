@@ -4,6 +4,35 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.24.0 — 2026-11-02
+
+The skill now checks whether an event is already on the calendar before
+it files. A second filing of a held event used to make a second hold.
+
+- **The lookup runs before every create,** on Event Holds only. It
+  keeps the entries on the same day at the same street address, matches
+  the event name word by word, and compares start times. Starts up to
+  2 hours apart are the same showtime.
+- **A shared link never counts as a match.** A series page links every
+  film in the series, so two different films can share one. A check of
+  the rule against real entries found four such pairs.
+- **When the entry exists, nothing new files.** The report opens
+  `Already held:` or `Already confirmed:` and links the entry. When the
+  input now gives a different time, the skill asks whether to update the
+  hold's times, and changes nothing else.
+- **When it can't tell, it asks one question** that lists the entries
+  that came close, with a new entry as the last choice. A page that
+  renamed its event between two filings lands here.
+- **Proof of purchase for a held showtime files nothing yet.** The
+  report names the hold and says the change to Confirmed isn't built.
+- **Private entries count, and stay unnamed** on runs that aren't
+  private.
+- **The calendar connector returns an all-day entry's date as midnight
+  UTC.** The lookup reads that date as written, so the entry stays on its
+  day.
+- `list_events` joins the tools. Without it the skill files as before
+  and says the lookup didn't run.
+
 ## 0.23.0 — 2026-11-01
 
 A confirmed entry can link straight to the tickets. Receipts are hard to
