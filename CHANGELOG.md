@@ -4,6 +4,59 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.27.0 — 2026-11-08
+
+An entry is now Confirmed when the user says it is, ticket or not, and its
+color follows its state. A Hold keeps its calendar's color and shows as
+Free. A Confirmed entry takes the color of the user's regular appointments
+and shows as Busy. A private Confirmed entry turns red and shows as Busy.
+
+- **Confirmed on the user's word.** "I'm going" and "change it to
+  Confirmed" confirm an entry with no email search and no question, because
+  many events have no proof to give. A new entry still gets the confirm
+  block. "I got tickets" still searches email once, and when no receipt
+  turns up the entry changes anyway and the report says so. A hedge or a
+  question ("I think I got tickets", "Did I get tickets?") still asks the
+  fallback question.
+- **🎟 means a ticket exists.** A Confirmed entry with no ticket reads
+  `📌 Confirmed:`. With a ticket it reads `📌 🎟 Confirmed:`, and later
+  proof adds the 🎟. It changes no color and no Free or Busy.
+- **A word-only confirm keeps the body.** It changes the title, Busy and the
+  color. The action line stays, because a user who is going may still need
+  to buy, and ticket lines replace it when a ticket arrives. A new Confirmed
+  entry with no ticket gets the Hold body and the availability check. A
+  sold-out finding goes on its top line, and the sold-out question does not
+  ask, because the user said they are going.
+- **Color by state.** A Hold sets no color, so it inherits its calendar's
+  color, private or not. A Confirmed entry sets `colorId: "9"` (Blueberry),
+  on filing and on Hold to Confirmed, whatever confirmed it: proof, or the
+  user's word. A private Confirmed entry, ticket or not, sets
+  `colorId: "11"` (Tomato, red) instead. The confirm block names no color,
+  because the title decides it.
+- **The title decides.** Private means 🤫 in the title, since every entry
+  has `visibility: private`. A private run that changes a hold with no 🤫
+  to Confirmed adds the 🤫, so the entry turns red.
+- **A fixed value.** The connector does not report a calendar's color, so
+  the skill carries the Confirmed color as a fixed value in step 8's
+  `colorId` field, and nowhere else. The author's main calendar and colorId
+  9 both render rgb(63,81,181). A user whose main calendar has another color
+  changes that value to the nearest of the 11 colors the field lists.
+- **No Event Holds calendar.** A Hold filed to the main calendar sets no
+  color, so it takes the main calendar's color and can look the same as a
+  Confirmed entry there. The title and Free or Busy still tell them apart.
+- **Color changes only with the state.** A color the user set by hand
+  stays until the entry changes state, the same as Busy set by hand.
+  Hold to Confirmed replaces it. Already held, Add to Confirmed, Already
+  confirmed and Remove never set it. Entries confirmed before this version
+  keep their color.
+- **Private-mode fine print.** A run that crashes or gets cut off keeps
+  its record on this Mac until the user deletes that session. The fine
+  print no longer calls the app's 30-day cleanup a backstop. It now says
+  the calendar entry is the one record a private run keeps, that a later
+  session reading those dates sees it, and that a session not called
+  private is recorded like any other. This edit shipped in the file on
+  2026-11-05 and is released here.
+
 ## 0.26.0 — 2026-11-03
 
 The skill now starts on what the user wants, whatever the input. Before

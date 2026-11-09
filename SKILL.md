@@ -1,7 +1,7 @@
 ---
 name: pic-to-cal
-version: 0.26.0
-description: Files and updates event entries on Google Calendar: a Hold for an event the user might attend, and a Confirmed entry once they have tickets. Invoked as "pic-to-cal" or "pic to cal". Trigger on intent, whatever the input: an event image (screenshot, flyer, poster, photo), an event-page or ticket link, a ticket PDF, a receipt or order email, or words alone. Phrasings include "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "I got tickets", "add the tickets to the hold", "did I get tickets for", "I'm not going to". Pasted or dragged screenshots count as attached. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If the ask names no event Claude can find, ask which one.
+version: 0.27.0
+description: Files and updates event entries on Google Calendar: a Hold for an event the user might attend, and a Confirmed entry once they are going. Invoked as "pic-to-cal" or "pic to cal". Trigger on intent, whatever the input: an event image (screenshot, flyer, poster, photo), an event-page or ticket link, a ticket PDF, a receipt or order email, or words alone. Phrasings include "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "I got tickets", "I'm going to that show", "change it to Confirmed", "add the tickets to the hold", "did I get tickets for", "I'm not going to". Pasted or dragged screenshots count as attached. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If the ask names no event Claude can find, ask which one.
 ---
 
 # pic-to-cal
@@ -12,7 +12,7 @@ Take an event image, an event-page URL, a ticket PDF, an email, or the user's ow
 
 The user screenshots events on Instagram, X, and email all the time — and photographs posters out in the city: concert posters, street flyers, anything taped to a wall with a date on it. Then they forget about them. Manual flow is: open calendar, type title, find the registration page, paste URL, set time, save. This skill collapses that to: attach image, type a trigger phrase, confirm once, done.
 
-The HOLD is intentionally low-commitment — it goes on the calendar before the user has decided whether to attend. The 📌 prefix and the Event Holds calendar's own color make HOLDs visually distinct from real meetings (the color is a calendar-level setting, not the skill's — see step 8).
+The HOLD is intentionally low-commitment — it goes on the calendar before the user has decided whether to attend. The 📌 prefix and the Event Holds calendar's own color make HOLDs visually distinct from real meetings (the color is a calendar-level setting — see step 8). A Confirmed entry takes the color of the user's regular appointments, because it is one.
 
 ## What's in scope (v0.2)
 
@@ -29,6 +29,8 @@ Also in scope since v0.24.0 (2026-11-02): **the lookup**. Before any create, the
 Also in scope since v0.25.0 (2026-11-02): **the two states and the actions on a found entry**. A hold changes to Confirmed when proof of purchase arrives, later proof adds to a Confirmed entry, and the user can remove an entry. See "The two states" and "Actions on a found entry" below.
 
 Also in scope since v0.26.0 (2026-11-03): **starting on intent**. The skill starts when the user wants an event on the calendar or wants to change one that is there, whatever the input: an image, a link, a ticket PDF, an email, or words alone. See "Trigger contract" and "Starting from words" below.
+
+Also in scope since v0.27.0 (2026-11-08): **Confirmed on the user's word, and color by state**. An entry is Confirmed when the user says so, with or without a ticket. A Hold keeps its calendar's color, and a Confirmed entry takes the color of the user's regular appointments, or red when it is private. See "Confirmed entries" and "The two states" below.
 
 ## What's out of scope (do not build)
 
@@ -47,7 +49,7 @@ Multi-day events, matching entries that other apps add to the calendar, changing
 
 **When the ask names no event Claude can find,** ask one question: `Which event?` Never ask for an image and stop.
 
-**The words decide the action, and the input decides the facts.** Words that name an action win: "I got tickets", "we're going", "I'm not going", "hold it for now". Plain filing words name no action, so "calendar this" and "pic to cal" leave the action to the input and the lookup. The phone app gets no words, so there the input always decides.
+**The words decide the action, and the input decides the facts.** Words that name an action win: "I got tickets", "I'm going", "we're going", "change it to Confirmed", "I'm not going", "hold it for now". Plain filing words name no action, so "calendar this" and "pic to cal" leave the action to the input and the lookup. The phone app gets no words, so there the input always decides.
 
 **What each input usually is.**
 
@@ -86,7 +88,7 @@ What does NOT turn it on is the word appearing in the event's own copy: a flyer 
 
 **What doesn't change: the hold itself.** Full body, exact-copy Details, cautions, links, verification footer, the guest check, the no-life-context rule, Free + Private + no attendees. A private hold is a normal hold; the calendar entry is the one artifact the user asked for. Nothing about this mode makes the body thinner.
 
-**One exception, in the title only (2026-08-12): 🤫 rides after the pushpin.** A private hold reads `📌 🤫 Hold: [event title]` instead of `📌 Hold: [event title]`, so the user can spot it in a month of calendar entries without opening it. The full spec is in step 8's `summary` field. Nothing else about the entry differs, and the marker is a deliberate trade: the title is the one record this mode keeps, so the 🤫 is also the one lasting sign that a run was private — it travels with the hold if it's ever forwarded or the calendar is shared.
+**One exception, in the title only (2026-08-12): 🤫 rides after the pushpin.** A private hold reads `📌 🤫 Hold: [event title]` instead of `📌 Hold: [event title]`, so the user can spot it in a month of calendar entries without opening it. The full spec is in step 8's `summary` field. Nothing else about a private hold differs, and the marker is a deliberate trade: the title is the one record this mode keeps, so the 🤫 is also the one lasting sign that a run was private — it travels with the hold if it's ever forwarded or the calendar is shared. A private Confirmed entry also turns red (2026-11-08; see step 8's `colorId` field).
 
 **The confirm block opens with the signal line**, so the user can see the mode is on before saying yes (rewritten in plain English 2026-08-12 — the old line read like a systems audit):
 
@@ -104,23 +106,25 @@ One line, at the top of the block, above `Ready to file:`. **The closing questio
 
 **Build-mode note, kept from 0.14.1:** when a *recorded* test needs to inspect what the session card carries, never name the event on a command line — the command is itself recorded in the file being searched. Put the terms in a scratch file outside the transcript folder, point the search at that file, and delete the scratch file after. Routine private runs skip this check entirely; it answers a question the fine print has already answered.
 
-**The fine print — stated once here, never repeated on every run (plain-English rewrite 2026-08-12).** What private mode promises: nothing about the run is written into this project's files, and that part is kept completely. The conversation's record on this Mac is deleted at the end, and that part is kept whenever the run finishes normally — a run that crashes or gets cut off never reaches the cleanup, and the app's own 30-day cleanup of old sessions is the backstop. What no cleanup can reach, ever: the app rewrites a small card for every session (a title, a one-line summary, the last thing typed) and that card usually names the event; the Mac's own backups may hold copies made before the cleanup ran; and Anthropic's servers processed the conversation like any chat, under their retention policy. Deleting here doesn't delete there — the same way deleting a text from a phone doesn't delete it from the carrier. And the cleanup erases only what came before it: the closing line and anything typed afterward are recorded like any conversation, which is why the run's report goes out ahead of the cleanup and nothing after it names the event.
+**The fine print — stated once here, never repeated on every run (plain-English rewrite 2026-08-12).** What private mode promises: nothing about the run is written into this project's files, and that part is kept completely. The conversation's record on this Mac is deleted at the end, and that part is kept whenever the run finishes normally — a run that crashes or gets cut off never reaches the cleanup, and its record stays on this Mac until you delete that session. What no cleanup can reach, ever: the app rewrites a small card for every session (a title, a one-line summary, the last thing typed) and that card usually names the event; the Mac's own backups may hold copies made before the cleanup ran; and Anthropic's servers processed the conversation like any chat, under their retention policy. Deleting here doesn't delete there — the same way deleting a text from a phone doesn't delete it from the carrier. And the cleanup erases only what came before it: the closing line and anything typed afterward are recorded like any conversation, which is why the run's report goes out ahead of the cleanup and nothing after it names the event. The calendar entry is the one record a private run keeps. Any later session that reads those dates sees it, and that session's record on this Mac holds its title and body. A session you did not call private is recorded like any other, even when it is about a private entry.
 
-## Confirmed entries: proof of purchase (2026-11-01)
+## Confirmed entries (2026-11-01, widened 2026-11-08)
 
-A hold exists so the user can decide later. A ticket means they already decided. When the image or page is proof of purchase, the entry files as a confirmed plan.
+A hold exists so the user can decide later. A Confirmed entry means they decided. **An entry is Confirmed when the user says so, or when the input is proof of purchase (2026-11-08).** Many events have no ticket or confirmation to show, so the user's word is enough. "I'm going", "we're going" and "change it to Confirmed" confirm an entry with no ticket. "I got tickets" confirms it with one.
 
-**What counts as proof of purchase:** an order or confirmation number, an "Order Confirmation" heading, a receipt, or a ticket with a QR code or a seat. An event page or flyer with a Tickets button offers a purchase, so it still files as a hold. When the input reads both ways, ask one question before the confirm: `Do you have tickets for this? (yes / no)`.
+**What counts as proof of purchase:** an order or confirmation number, an "Order Confirmation" heading, a receipt, or a ticket with a QR code or a seat. An event page or flyer with a Tickets button offers a purchase, so it still files as a hold unless the user says they are going. When the input reads both ways, ask one question before the confirm: `Do you have tickets for this? (yes / no)`.
 
 **What changes:**
 
-- **The title.** `📌 🎟 Confirmed: [event title]`. The 🎟 goes after the pin, and `Confirmed:` takes the place of `Hold:`. This is the one exception to step 8's rule that every hold says `📌 Hold:`. The pin stays, so everything the skill files still lines up in a month view. A private run reads `📌 🤫 🎟 Confirmed: [event title]`, in that order: pin, 🤫, 🎟, word, name.
-- **Busy.** `availability` is `AVAILABILITY_BUSY`. A hold stays Free so a placeholder never makes the user look booked. A ticket is a seat the user paid for.
+- **The title.** `📌 Confirmed: [event title]` with no ticket, and `📌 🎟 Confirmed: [event title]` with one. `Confirmed:` takes the place of `Hold:`. This is the one exception to step 8's rule that every hold says `📌 Hold:`. The pin stays, so everything the skill files still lines up in a month view. The 🎟 goes after the pin, and it means only that a ticket exists: proof of purchase, or the user's word that they have one. Later proof adds it. It changes no color and no Free or Busy. A private run reads `📌 🤫 Confirmed: [event title]` or `📌 🤫 🎟 Confirmed: [event title]`, in that order: pin, 🤫, 🎟, word, name.
+- **Busy.** `availability` is `AVAILABILITY_BUSY`. A hold stays Free so a placeholder never makes the user look booked. A Confirmed entry means the user is going.
+- **The color (v0.27.0).** The color of the user's regular appointments, or red when the title carries 🤫, ticket or not. Step 8's `colorId` field holds the values.
 - **The order number (v0.22.0).** It sits on its own line right under Venue, labeled the way the receipt labels it: `Order Number: 12345678`, `Confirmation #: 12345678`. The user needs it at the door, and searching email for it there is slow. It is the one personal detail a confirmed entry carries. The user's name, the ticket count, and the payment stay out, as on every hold. When the input shows no number, the receipt from email can supply it (v0.23.0). Otherwise the line is left out.
-- **No availability check.** Step 5's sold-out and waitlist checks are skipped, and the title never carries SOLD OUT or WAITLIST ONLY. The user already has tickets, so either marker would mislead.
+- **No availability check with a ticket.** Step 5's sold-out and waitlist checks are skipped, because the user already has a ticket. With no ticket the checks still run, and what they find goes in the body. The title of a Confirmed entry never carries SOLD OUT or WAITLIST ONLY, ticket or not, because the user is going.
 - **The confirm and the report.** The step-7 Title line shows the confirmed title, and a `Show as: Busy` line follows the Calendar line. The step-9 report opens `Filed:` instead of `HOLD filed:`.
+- **The body with no ticket (2026-11-08).** It is the Hold body, action line included, because a user who is going may still need to buy. Ticket lines replace the action line when a ticket arrives (see "Add to Confirmed" in "Actions on a found entry").
 
-**The receipt from email (v0.23.0).** On every confirmed filing, ask one question before the confirm: `Search your email for the order confirmation? (yes / no)`. Never search without a yes. The question asks even on the URL path that skips the confirm. One exception (2026-11-02): the user's own question or claim about tickets counts as the yes for one search. "Did I get tickets?", "I think I got tickets", "I got tickets" and "Where are my tickets?" all count. On a yes, search for the matching receipt (the seller or venue, the event title, and the order number when known) and read only that message. From it take:
+**The receipt from email (v0.23.0).** When the input is proof of purchase, ask one question before the confirm: `Search your email for the order confirmation? (yes / no)`. Never search without a yes. The question asks even on the URL path that skips the confirm. Words that say only that the user is going ask nothing about email and search nothing (2026-11-08). One exception (2026-11-02): the user's own question or claim about tickets counts as the yes for one search. "Did I get tickets?", "I think I got tickets", "I got tickets" and "Where are my tickets?" all count. On a yes, search for the matching receipt (the seller or venue, the event title, and the order number when known) and read only that message. From it take:
 
 1. The order number, when the input didn't show it.
 2. Each ticket link the receipt gives ("View tickets", "Add to Wallet", "Download tickets"), labeled the way the email labels it. A receipt with one link per ticket gets one line per link.
@@ -130,11 +134,11 @@ These lines go under the order number, in that order. Some ticket links open wit
 
 Receipts often arrive after the screenshot. When the receipt isn't there yet, file without these lines and add one line to the report: `The receipt isn't in your email yet. Say "check again" to add the ticket links.` On "check again", search again and add the lines to the existing entry: that is Add to Confirmed (see "Actions on a found entry").
 
-**No action line (2026-11-02).** A Confirmed entry carries no action line with a price and status. The ticket lines take its place (see "The two states").
+**No action line with a ticket (2026-11-02, narrowed 2026-11-08).** A Confirmed entry with a ticket carries no action line with a price and status. The ticket lines take its place (see "The two states").
 
 **What stays the same:** verification, the exact-copy Details block, the end-time ladder, the guest check (apart from the order-number, ticket-link, and Order email lines), Private visibility, and no attendees. The ticket and the event page are both sources. When they agree, the entry earns ✓ against the page as usual.
 
-The run that set it: a BAM order confirmation for a screening that night. It filed as `📌 Hold:` and Free, and the user set the rule. A two-page ticket PDF in August first raised the question.
+The run that set it: a BAM order confirmation for a screening that night. It filed as `📌 Hold:` and Free, and the user set the rule. A two-page ticket PDF in August first raised the question. The user widened the rule on 2026-11-08: an entry is Confirmed when they say it is, with or without proof, because many events have no proof to give.
 
 ## The lookup: is it already on the calendar? (2026-11-02)
 
@@ -177,9 +181,9 @@ Which one?
 **What a found entry does.** A found entry stops the create. Never file a second entry beside it, and skip the confirm block.
 
 - **Already held:** the input is an event, and the entry is a Hold. The report opens `Already held:` (step 9). When the input gives a different start or end, the report says so and asks one question, with the real values: `The page now says 8 AM. The hold says 9 AM. Update the hold? (yes / no)`. Name the source the way it is: the page, the flyer, the screenshot. On a yes, change only the start and the end with `update_event`, notifications off, and give the footer the new check date. News the new read turns up, such as SOLD OUT, goes in the report and not in the entry.
-- **Already confirmed:** the input is an event, and the entry is Confirmed. The report opens `Already confirmed:`. Nothing changes.
-- **Proof of purchase for a held showtime:** Hold to Confirmed (see "Actions on a found entry").
-- **Proof of purchase for a Confirmed entry:** Add to Confirmed (see "Actions on a found entry").
+- **Already confirmed:** the input is an event or the user's word that they are going, and the entry is Confirmed. The report opens `Already confirmed:`. Nothing changes.
+- **Proof of purchase or the user's word for a held showtime:** Hold to Confirmed (see "Actions on a found entry").
+- **Proof of purchase or "I got tickets" for a Confirmed entry:** Add to Confirmed (see "Actions on a found entry").
 
 **Private entries.** A 🤫 entry counts like any other. On a run that is not private, never write its title: the report and the ask list call it `a private entry on [Mon D]`, with its link.
 
@@ -187,22 +191,29 @@ Which one?
 
 ## The two states (2026-11-02)
 
-Every entry the skill files has one state, and the title word carries it. The title is what the user scans, so the title is the record. Free or Busy and the body follow from the state.
+Every entry the skill files has one state, and the title word carries it. The title is what the user scans, so the title is the record. Free or Busy, the color and the body follow from the title.
 
 | | Hold | Confirmed |
 |---|---|---|
-| Means | The user might go. | The user has a place at this showtime. |
-| Title | `📌 Hold: [name]` | `📌 🎟 Confirmed: [name]` |
-| Shows as | Free | Busy |
-| The body is for | Deciding | Attending |
-| Leads with | The event's own words | The Venue line, then the lines that get the user in the door |
-| Buying | The action link, with its dated price and availability | None. The ticket lines take its place. |
+| Means | The user might go. | The user is going to this showtime, ticket or not. |
+| Title | `📌 Hold: [name]` | `📌 Confirmed: [name]`, or `📌 🎟 Confirmed: [name]` with a ticket |
+| The body is for | Deciding | Attending. With no ticket, the Hold body stays. |
+| Leads with | The event's own words | With a ticket, the Venue line, then the lines that get the user in the door |
+| Buying | The action link, with its dated price and availability | With a ticket, none: the ticket lines take its place. With no ticket, the action link stays. |
 
-- **A place** is a ticket, a reservation or a confirmed RSVP, free ones included.
-- **A private run** adds 🤫 after the pin in both states.
+**What the title decides (2026-11-08).** This is the whole rule for Free or Busy and the color. Step 8's `colorId` field holds the values.
+
+| The title starts | Shows as | Color |
+|---|---|---|
+| `📌 Hold:` or `📌 🤫 Hold:` | Free | The calendar's own color. The entry sets none. |
+| `📌 Confirmed:` or `📌 🎟 Confirmed:` | Busy | The color of the user's regular appointments |
+| `📌 🤫 Confirmed:` or `📌 🤫 🎟 Confirmed:` | Busy | Red (Tomato) |
+
+- **The 🎟 marks a place the user holds:** a ticket, a reservation or a confirmed RSVP, free ones included. It changes nothing else: no color, and no Free or Busy.
+- **A private run** adds 🤫 after the pin in both states. Private means 🤫 in the title. Only the Confirmed state also changes color: a private Hold keeps the calendar's color, and a private Confirmed entry is red.
 - **Both states keep** Details, Source, the dated footer and the calendar's default reminders.
-- **Set Free or Busy only when filing an entry or changing its state.** A hold the user marked Busy by hand stays the way they left it.
-- **A Confirmed body drops the lines written for deciding:** the action line with its price and status, and any 🎟 availability line. Details and Source stay, so a guest who wants a ticket is one tap from the event page.
+- **Set Free or Busy and the color only when filing an entry or changing its state.** A hold the user marked Busy or colored by hand stays the way they left it until its state changes.
+- **A ticket drops the lines written for deciding:** the action line with its price and status, and any 🎟 availability line. Details and Source stay, so a guest who wants a ticket is one tap from the event page. A Confirmed entry with no ticket keeps them, because the user may still need to buy.
 - **The title has one slot for news,** between the state word and the name, with a dash after it. Holds use it for SOLD OUT and WAITLIST ONLY, which never apply to a Confirmed entry. The body's top line, above Venue, is the news line in both states.
 - **Travel time stays out of both states,** and no action adds it. When the user asks for travel time on a run, add it to that entry only.
 
@@ -213,34 +224,37 @@ The lookup runs first. What it found and what the input is decide the action.
 | Action | The input | The lookup found |
 |---|---|---|
 | Nothing to Hold | An event | Nothing |
-| Nothing to Confirmed | Proof of purchase | Nothing |
+| Nothing to Confirmed | Proof of purchase, or the user's word | Nothing |
 | Already held | An event | A Hold |
-| Hold to Confirmed | Proof of purchase, or the user's word and a yes to the fallback question | A Hold |
-| Add to Confirmed | Proof of purchase, or "check again" | A Confirmed entry |
-| Already confirmed | An event | A Confirmed entry |
+| Hold to Confirmed | Proof of purchase, or the user's word | A Hold |
+| Add to Confirmed | Proof of purchase, "I got tickets", or "check again" | A Confirmed entry |
+| Already confirmed | An event, or the user's word that they are going | A Confirmed entry |
 | Remove | The user's word | Either state |
 
 **Four rules for every action.**
 
 1. **One entry.** Change the found entry with `update_event`. Never file a second entry beside it.
 2. **The body ends in its state's shape** (see "The two states"). An action on an older entry also clears what its state drops.
-3. **Free or Busy changes only when the state changes.**
+3. **Free or Busy and the color change only when the state changes.** Already held, Add to Confirmed, Already confirmed and Remove never set them, even on an older entry whose color does not match its state.
 4. **Notifications stay off** (`notificationLevel: NONE`). Guests see the change when they open the entry.
 
-Each action reports the way step 9 does: one line that links the entry, plus one line for each thing that changed.
+Each action reports the way step 9 does: one line that links the entry, plus one line for each thing that changed. Busy and the color come with `Changed to Confirmed:` and get no line of their own.
 
 **Nothing to Hold and Nothing to Confirmed** run the workflow as written. After Nothing to Confirmed, ask about the other showtimes (below).
 
 **Already held and Already confirmed** are in "The lookup".
 
-**Hold to Confirmed.** Proof of purchase for a held showtime. It happens on the proof, and the report says what changed.
+**Hold to Confirmed.** The user says they are going, or proof of purchase arrives for a held showtime. It happens on the word or the proof, and the report says what changed.
 
-- **The user's word alone is not proof.** A claim of tickets sends Claude to the receipt (see "Starting from words"). When no receipt turns up, ask once: `No receipt found for IN THE WOODS. Change it to Confirmed anyway? (yes / no)`. A yes covers tickets that live in an app or on someone else's account.
-- **Before the change,** ask the receipt question from "Confirmed entries": `Search your email for the order confirmation? (yes / no)`. Skip it when the user's words about tickets already count as the yes.
-- **The title:** `Hold:` becomes `🎟 Confirmed:` after the pin. A SOLD OUT or WAITLIST ONLY marker drops. The 🤫 and the name stay.
+- **The user's word is enough (2026-11-08).** "I'm going" and "change it to Confirmed" change the entry at once, with no email search and no question. "I got tickets" changes it too. Those words count as the yes for one email search (see "Starting from words"). When no receipt turns up, the entry still changes, with the 🎟, and the report adds one line: `No receipt found.`
+- **A hedge or a question is not the user's word.** "I think I got tickets" and "Did I get tickets?" search the same way. When no receipt turns up, ask once: `No receipt found for IN THE WOODS. Change it to Confirmed anyway? (yes / no)`. A yes covers tickets that live in an app or on someone else's account, so the title takes the 🎟. A no changes nothing.
+- **Before a change on proof,** ask the receipt question from "Confirmed entries": `Search your email for the order confirmation? (yes / no)`. Skip it when the user's words about tickets already count as the yes.
+- **The title:** `Hold:` becomes `Confirmed:` after the pin, or `🎟 Confirmed:` with a ticket. A SOLD OUT or WAITLIST ONLY marker drops. The 🤫 and the name stay. A private run adds the 🤫 when the title lacks it, which makes the entry red.
 - **Free becomes Busy.**
-- **The body loses** the top availability line, the action line with its price and status, and any 🎟 availability caution.
-- **The body gains** the order number, the ticket links and the order email, under Venue. They come from the proof, and from the receipt after a yes.
+- **The color changes** to the Confirmed color, or to red when the finished title carries 🤫, whatever confirmed the entry: proof, or the user's word. This replaces a color set by hand. Step 8's `colorId` field holds the values.
+- **With a ticket, the body loses** the top availability line, the action line with its price and status, and any 🎟 availability caution.
+- **With a ticket, the body gains** the order number, the ticket links and the order email, under Venue. They come from the proof, and from the receipt after a yes.
+- **With no ticket, the body stays as it is.** The change sets only the title, Busy and the color.
 - **The start** takes the proof's time when the two differ, and the report says so. The end changes only when the proof prints an end or a runtime, by the end-time ladder in step 3.
 - **Everything else stays:** Details and the blocks under it, the ⏰ cautions, the ⏱ caution, Source, and the dated footer.
 - **When the entry has a guest,** the report says what the guest now sees: the new title and the booking lines. Some ticket links open without a login.
@@ -253,7 +267,7 @@ You also have holds for IN THE WOODS on Oct 12 and Oct 28. Delete them or leave 
 
 Delete removes every hold listed with `delete_event`, notifications off. Leave changes nothing. When a hold has a guest, the question says so, because deleting it takes it off the guest's calendar too.
 
-**Add to Confirmed.** Later proof for an entry that is already Confirmed: the receipt email arriving after the screenshot, a wallet link, or "check again". Add the booking lines the entry lacks, and repeat none it has. Clear any hold text, by rule 2. When the receipt adds no line, the report says the entry already has what the receipt gives.
+**Add to Confirmed.** Later proof for an entry that is already Confirmed: the receipt email arriving after the screenshot, a wallet link, "check again", or "I got tickets". Add the 🎟 when the title lacks it. The 🤫 and the name stay. Add the booking lines the entry lacks, and repeat none it has. Clear any hold text, by rule 2. Busy and the color stay as they are. When the receipt adds no line, the report says the entry already has what the receipt gives. When "I got tickets" finds no receipt, add the 🎟 alone and report `No receipt found.`
 
 **Remove.** The user's words: "I'm not going to that show", "I sold my tickets", "delete that hold". Find the entry the words name on Event Holds. When more than one could be it, ask which. Then name the entry and ask first, saying so when it is Confirmed or has a guest: `Delete 📌 Hold: THE CURSE OF HER FLESH (Spectacle Theater) on Oct 23? (yes / no)`. Never delete without that yes. On a yes, delete it with `delete_event`, notifications off.
 
@@ -267,10 +281,12 @@ Words alone carry no image to transcribe, and often too little for the lookup. W
 
 The same three steps find the entry for Remove.
 
+**When the words say only that the user is going,** search nothing. Find the entry and run Hold to Confirmed. When more than one candidate is left, ask which one. When nothing is there, the run files a new entry: Nothing to Confirmed.
+
 **When the words are about tickets,** search email for a receipt. The words count as the yes (see "Confirmed entries"). Search on each candidate's name and venue, and read only the messages whose sender or subject marks them as a receipt, such as "Your tickets" or "Order confirmation". A release notice or a forwarded copy is not the receipt. Then say what was found in one message:
 
 - **A receipt matches one candidate** on name, venue and date: that receipt picks the entry. A Hold changes to Confirmed, and a Confirmed entry gets Add to Confirmed. The report links the entry.
-- **No receipt turns up:** when more than one candidate is left, ask which one. Then ask the fallback question from Hold to Confirmed.
+- **No receipt turns up:** when more than one candidate is left, ask which one. Then a plain claim ("I got tickets") changes the entry and reports `No receipt found.`, and a hedge or a question ("I think I got tickets") asks the fallback question from Hold to Confirmed.
 
 For example, "I think I got tickets for a concert on the 7th" lists Event Holds from the 6th to the 8th. "Concert" matches no title, so every entry there stays a candidate. The email search finds one receipt that matches one entry on name, venue and date, and that entry changes to Confirmed. Without the receipt, the skill lists the candidates and asks which one.
 
@@ -279,12 +295,12 @@ For example, "I think I got tickets for a concert on the 7th" lists Event Holds 
 - Remove, and deleting the other showtimes.
 - The lookup's ask answer.
 - Updating a held entry's times.
-- Hold to Confirmed when no receipt turns up.
+- Hold to Confirmed when a hedge or a question about tickets finds no receipt.
 - Any email search the user's own words did not ask for.
 
 **What happens, and is reported after.**
 
-- Hold to Confirmed on proof.
+- Hold to Confirmed on proof or on the user's word.
 - Add to Confirmed.
 - Already held and Already confirmed, which change nothing.
 
@@ -487,14 +503,14 @@ While you're here, recover the venue's full street address if the image only nam
 
 **Gated addresses (2026-07-22, AI Tinkerers test).** Application-screened events publish the address only after approval — the page says so outright ("Address Info: Available after application approval"). That's a finding, not a failure: no search recovers a gated address, so don't burn queries on it. File `location` as the city (e.g. "New York, NY") and add a dated 📍 caution quoting the gate, so the user knows the address arrives with their approval.
 
-**Always check ticket availability while reading the page** (2026-07-05, LIXIL sold-out test). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding. Skip this check on a confirmed entry (2026-11-01): the user already has tickets.
+**Always check ticket availability while reading the page** (2026-07-05, LIXIL sold-out test). Look for the signals: "sold out", "waitlist", "sales ended", "N tickets remaining". If one is present, carry it as a dated caution line — e.g. `🎟 Heads up: the page showed a "tickets have sold out" notice when checked (YYYY-MM-DD) — spots may still open up; the ticket page is the place to watch.` The date matters: availability moves, so the line records when it was true. If the page says nothing about availability, add nothing — silence isn't a finding. Skip this check on a confirmed entry with a ticket (2026-11-01): the user already has one. A Confirmed entry with no ticket keeps the check (2026-11-08).
 
 **Sold out is a headline, not a footnote (2026-08-05, Test 18).** A sold-out event still gets a hold — it becomes an FYI rather than a plan — but the status goes where a reader hits it first, not in the caution block at the bottom. Two placements:
 
 - The 🎟 line leads the body, its own line above Venue.
 - The title carries it: `📌 Hold: SOLD OUT — [event title]`. The `📌 Hold:` prefix stays; SOLD OUT goes between it and the event name, never in place of it.
 
-Ask once before filing: `This one is sold out. Still want the hold? (yes / no)`. Waitlist-only gets the same treatment, with a fixed title word (2026-10-04): `📌 Hold: WAITLIST ONLY — [event title]`. For sales-ended, say what the page said rather than flattening every status to one word.
+Ask once before filing: `This one is sold out. Still want the hold? (yes / no)`. A Confirmed entry with no ticket skips the question, because the user said they are going, and the top line still carries the status (2026-11-08). Waitlist-only gets the same treatment, with a fixed title word (2026-10-04): `📌 Hold: WAITLIST ONLY — [event title]`. For sales-ended, say what the page said rather than flattening every status to one word.
 
 **When there is more than one date, the which-dates question carries the status and replaces the yes/no (2026-10-04).** One question, never two. The dates can come from one page or from linked pages (step 4, URL input, rule 3):
 
@@ -553,9 +569,9 @@ Schedule it? (yes / no / fix)
 
 On a private run the Title line shows the title that will actually be filed, 🤫 included: `Title:       📌 🤫 Hold: [event title]`. Same rule as every other field in the block — real values, never the template. And the closing question becomes `Save the event and delete the record of this session? (yes / no / fix)` — one yes covers the filing and the cleanup (2026-08-12; full spec in the private-mode section).
 
-On a confirmed entry the Title line shows `📌 🎟 Confirmed: [event title]`, and `Show as:     Busy` follows the Calendar line (2026-11-01; full spec in "Confirmed entries").
+On a confirmed entry the Title line shows the Confirmed title as it will be filed, with or without 🎟, and `Show as:     Busy` follows the Calendar line (2026-11-01; full spec in "Confirmed entries"). The block names no color, because the title decides it (2026-11-08).
 
-**URL input: skip the confirm when the ask already answered it (2026-07-28, Test 16).** All three conditions, or the confirm shows as written: (1) URL input; (2) the user's message clearly says to file it ("put a hold for this on my calendar"), not a hedged ask ("what do you think about this event?"); (3) exactly one showtime resolved, no low-confidence field, no question pending. Then file directly and report — the ask was the yes, and re-asking it is friction (Test 16 filed three holds this way; the user corrected after via the report, which worked). The guest check (step 8) still runs — it doesn't depend on a human looking. The past-date question from step 3 still asks even on this path: a past date on a series page is likelier a surprise than a choice.
+**URL input: skip the confirm when the ask already answered it (2026-07-28, Test 16).** All three conditions, or the confirm shows as written: (1) URL input; (2) the user's message clearly says to file it ("put a hold for this on my calendar"), not a hedged ask ("what do you think about this event?"); (3) exactly one showtime resolved, no low-confidence field, no question pending. Then file directly and report — the ask was the yes, and re-asking it is friction (Test 16 filed three holds this way; the user corrected after via the report, which worked). The guest check (step 8) still runs — it doesn't depend on a human looking. The past-date question from step 3 still asks even on this path: a past date on a series page is likelier a surprise than a choice. A filing on this path takes the same Free or Busy and the same color as any other, so a Hold sets no `colorId`.
 
 **Past dates were settled at step 3.** By the time the confirm is built, the user has already said yes to any past date. The confirm does not raise it again.
 
@@ -581,13 +597,13 @@ The run that set it: an Instagram post for a film at Spectacle. The hold carried
 
 Use the Google Calendar `create_event` tool with:
 
-- **calendarId**: resolve by name, never by a pinned ID. Call `list_calendars` and look for a calendar named **"Event Holds"** — match case-insensitively with surrounding whitespace trimmed ("event holds" counts). If it exists, file there. If it doesn't, file to `primary` and append one line to the step-9 report: `Filed to your main calendar — create a Google calendar named "Event Holds" and future holds will file there instead, toggleable in the sidebar.` Don't create the calendar (the connector can't) and don't ask a setup question — the calendar's existence IS the configuration. Resolve the destination before the step-7 confirm so the block shows where the hold will actually land. If the create against a found calendar fails, stop and say which calendar was tried
-- **summary**: `📌 Hold: [event title]` — always this exact prefix, even when the event title contains its own colon ("📌 Hold: Twin Peaks: Fire Walk With Me…" is correct; confirmed 2026-07-04, don't restructure to avoid the double colon). **The prefix is never replaced or dropped — every hold says `📌 Hold:` (2026-08-05).** A sold-out event is still a hold; the status is inserted after the prefix, ahead of the event name: `📌 Hold: SOLD OUT — [event title]`. Waitlist-only reads `📌 Hold: WAITLIST ONLY — [event title]` (2026-10-04). Reading order is what makes this work: what it is, then the thing to know about it, then what it's called. **A private run adds one emoji and changes nothing else (2026-08-12):** 🤫 goes directly after the pushpin, and the rest of the title runs on as written — `📌 🤫 Hold: [event title]`. Space between the two emoji. This is an insertion, not a replacement: the 📌 stays, `Hold:` stays, and everything downstream of it is untouched. With both modifiers on one title the order is pushpin, 🤫, `Hold:`, status, name — `📌 🤫 Hold: SOLD OUT — [event title]`. **Proof of purchase is the one exception to the prefix (2026-11-01):** a confirmed entry reads `📌 🎟 Confirmed: [event title]`, and a private one `📌 🤫 🎟 Confirmed: [event title]`. See "Confirmed entries".
+- **calendarId**: resolve by name, never by a pinned ID. Call `list_calendars` and look for a calendar named **"Event Holds"** — match case-insensitively with surrounding whitespace trimmed ("event holds" counts). If it exists, file there. If it doesn't, file to `primary` and append one line to the step-9 report: `Filed to your main calendar — create a Google calendar named "Event Holds" and future holds will file there instead, in that calendar's own color, toggleable in the sidebar.` Don't create the calendar (the connector can't) and don't ask a setup question — the calendar's existence IS the configuration. Resolve the destination before the step-7 confirm so the block shows where the hold will actually land. If the create against a found calendar fails, stop and say which calendar was tried
+- **summary**: `📌 Hold: [event title]` — always this exact prefix, even when the event title contains its own colon ("📌 Hold: Twin Peaks: Fire Walk With Me…" is correct; confirmed 2026-07-04, don't restructure to avoid the double colon). **The prefix is never replaced or dropped — every hold says `📌 Hold:` (2026-08-05).** A sold-out event is still a hold; the status is inserted after the prefix, ahead of the event name: `📌 Hold: SOLD OUT — [event title]`. Waitlist-only reads `📌 Hold: WAITLIST ONLY — [event title]` (2026-10-04). Reading order is what makes this work: what it is, then the thing to know about it, then what it's called. **A private run adds one emoji and changes nothing else (2026-08-12):** 🤫 goes directly after the pushpin, and the rest of the title runs on as written — `📌 🤫 Hold: [event title]`. Space between the two emoji. This is an insertion, not a replacement: the 📌 stays, `Hold:` stays, and everything downstream of it is untouched. With both modifiers on one title the order is pushpin, 🤫, `Hold:`, status, name — `📌 🤫 Hold: SOLD OUT — [event title]`. **A Confirmed entry is the one exception to the prefix (2026-11-01, widened 2026-11-08):** it reads `📌 Confirmed: [event title]`, or `📌 🎟 Confirmed: [event title]` with a ticket, and a private one takes 🤫 after the pin: `📌 🤫 Confirmed: [event title]`, `📌 🤫 🎟 Confirmed: [event title]`. See "Confirmed entries".
 - **start** / **end**: ISO datetime with `timeZone` set to the IANA TZ (e.g. `America/New_York`). **Date-only event:** set `allDay: true` and pass the date(s) instead of datetimes — this renders as the thin all-day banner, not a timed block. Omit `timeZone` for all-day events
-- **location**: physical address or the literal string `Virtual`. This is the highest-value field on a HOLD — it's what gives the user the map, the directions, and the travel-time estimate. Always pass the full street address here. **Filing is a two-call operation, by design.** The connector drops `location` on `create_event` every time it's been observed, so don't treat the first call as enough: always follow `create_event` with an `update_event` that sets `location`. Don't bother branching on whether the create kept it — just always patch. If a create ever returns the location intact, fine, but never design around that.
-- **colorId**: omit — color is the calendar's job, not the skill's. Verified 2026-07-20 by rendering all candidates: the API accepts only colorId 1–11 (the classic palette; 12+ returns "invalid argument"), while the UI's current 24-name palette (Birch and the rest) is UI-only and unreachable from the API. So the skill sets no per-event color: every HOLD inherits the Event Holds calendar's own color, which the user picks once in the Google Calendar sidebar. (To clear a stray per-event override left by an older version, `update_event` with `colorId: "0"` resets the event to the calendar color.)
+- **location**: physical address or the literal string `Virtual`. This is the highest-value field on a HOLD — it's what gives the user the map, the directions, and the travel-time estimate. Always pass the full street address here. **Filing is a two-call operation, by design.** The connector drops `location` on `create_event` every time it's been observed, so don't treat the first call as enough: always follow `create_event` with an `update_event` that sets `location`. Don't bother branching on whether the create kept it — just always patch. If a create ever returns the location intact, fine, but never design around that. The patch sends `location` and leaves `colorId` and `availability` out, so the color and Free or Busy set on the create stay: `update_event` leaves unset fields alone.
+- **colorId**: follows the finished title (2026-11-08; the table is in "The two states"). Each entry follows its own title, so several holds from one source all omit it. **A Hold, private or not: omit it.** The entry inherits its calendar's own color, which the user picks once in the Google Calendar sidebar. The author's Event Holds calendar is Birch. The skill can't set Birch on an event. Verified 2026-07-20 by rendering all candidates: the API accepts only colorId 1–11 (the classic palette; 12+ returns "invalid argument"), while the UI's current 24-name palette (Birch and the rest) is UI-only and unreachable from the API. (To clear a stray per-event override left by an older version, `update_event` with `colorId: "0"` resets the event to the calendar color.) **No Event Holds calendar:** a Hold filed to the main calendar still omits it, so it takes the main calendar's color and can look the same as a Confirmed entry there. The title and Free or Busy still tell them apart. A Confirmed entry there sets its color as usual. **A Confirmed entry: set `colorId: "9"` (Blueberry),** on filing and on Hold to Confirmed, so it reads as a regular appointment. The rule is the color of the user's regular appointments. The connector does not report a calendar's color, so the value is fixed, and this field is the only place it lives. The author's main calendar and colorId 9 both render rgb(63,81,181) (2026-11-08). A user whose main calendar has another color changes `"9"` to the nearest of: 1 Lavender, 2 Sage, 3 Grape, 4 Flamingo, 5 Banana, 6 Tangerine, 7 Peacock, 8 Graphite, 9 Blueberry, 10 Basil, 11 Tomato. **A private Confirmed entry, ticket or not: set `colorId: "11"` (Tomato, red) instead.** It renders rgb(213,0,0) (2026-11-08). Private means 🤫 in the title. Every entry has `visibility: private`, so never read that field to choose the color.
 - **visibility**: `private`
-- **availability**: `AVAILABILITY_FREE` (shows the time as **Free**, not Busy). A HOLD is a placeholder, not a commitment — it shouldn't block the user's availability or make them look booked. Default every HOLD to Free + Private. A confirmed entry is the exception: `AVAILABILITY_BUSY`, because the user holds tickets (2026-11-01).
+- **availability**: `AVAILABILITY_FREE` (shows the time as **Free**, not Busy). A HOLD is a placeholder, not a commitment — it shouldn't block the user's availability or make them look booked. Default every HOLD to Free + Private. A confirmed entry is the exception: `AVAILABILITY_BUSY`, because the user is going, ticketed or not (2026-11-08).
 - **attendees**: omit (no invitations)
 - **description**: HTML, structured like this. **Formatting caution:** Google Calendar renders *both* `<br>` tags and literal newline characters as line breaks, so never put an actual newline next to a `<br>` in the description string — you'll get double-spacing. Keep each block's markup contiguous (no literal line breaks inside it); use `<br>` alone for a single line break and `<br><br>` for a blank line. Let the `<p>` tags handle spacing *between* sections. Never use `<pre>` (2026-10-05): it never wraps a line, and Calendar cuts long lines off at the right edge of the event panel.
 
@@ -629,7 +645,7 @@ Use the Google Calendar `create_event` tool with:
        register / registration → "Register"
      Show the literal URL as the visible link text (e.g. https://www.spectacletheater.com/ ), not a friendly title.
      PRICE (2026-07-20): quote it exactly as the ticket page prints it ("from $22"), dated, on this line. Never a structured Price field, never a number computed from tiers; when no price is shown anywhere, say nothing.
-     CONFIRMED ENTRIES (2026-11-02): omit this line. The ticket lines under Venue take its place.
+     CONFIRMED ENTRIES WITH A TICKET (2026-11-02): omit this line. The ticket lines under Venue take its place. A Confirmed entry with no ticket keeps it (2026-11-08).
      ONE LINK, ONCE (2026-07-21): if the best action link is a URL the body already carries (usually the Venue line, on unverified holds), drop the action line entirely — a repeated URL is noise, not emphasis. -->
 
 <p><b>Audience:</b> [audience if visible in image or on page]</p>
@@ -702,7 +718,7 @@ This spec is also the spec for a phone app, and the phone won't have the same to
 | Calendar write | Nothing files. Required — stop and say so. |
 | Calendar read (`list_events`) | The lookup can't run, so a second filing can make a second entry. File as before, and add one line to the report: `Couldn't check Event Holds for an entry that already covers this.` (2026-11-02) |
 | Calendar delete (`delete_event`) | Remove and the delete answer can't run. The entry stays, and the report says: `Couldn't delete it. Delete it in Google Calendar.` (2026-11-02) |
-| Email read | Confirmed entries file with what the image or page shows: the order number only when the input printed it, and no ticket or receipt links. Skip the email question (2026-11-01). Words about tickets go straight to the fallback question, and an email input can't be read, so ask for a screenshot of it (2026-11-02). |
+| Email read | Confirmed entries filed from proof carry what the image or page shows: the order number only when the input printed it, and no ticket or receipt links. Skip the email question (2026-11-01). A plain claim of tickets changes the entry with no search, a hedge or a question goes straight to the fallback question, and an email input can't be read, so ask for a screenshot of it (2026-11-02). |
 | Transcript deletion (`private-scrub.sh`) | Private mode still keeps its whole promise about this project's records, which is the part that lasts. Only the cleanup is lost: the conversation stays in the runtime's own history until its retention clears it. Say that at the end of the run instead of reporting a cleanup that didn't happen (2026-08-07). |
 
 Two rules follow from the table, and they hold in any runtime. Verification is never assumed: absent proof, the hold says so in words rather than filing a confident-looking guess — which is how the "detail, never correctness" promise survives a missing capability, by downgrading the badge rather than trying harder. And enrichment is never load-bearing: if a block of body copy would change the date, time, or place, it isn't enrichment — it belongs to verification and needs a readable source.
