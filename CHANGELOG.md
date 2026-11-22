@@ -4,6 +4,46 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.30.0 — 2026-11-22
+
+**Your ticket is in the calendar entry.** Your ticket is now in the calendar
+entry. At the door, you open the entry and tap the ticket link.
+
+Before, you opened your email and looked for the ticket.
+
+What you get:
+
+- You open the ticket from the entry. You do not search your email.
+- You have a backup. The order number is in the entry, and you can read it
+  with no signal.
+- You find all your tickets in one place: the Google Drive folder `Event
+  tickets`.
+- Your ticket stays private. A guest on the entry cannot open it.
+- If your ticket came as an email attachment, say "I got tickets". The skill
+  finds the ticket in your email and puts it on the entry.
+
+Two limits: the ticket opens in Google Drive, and Drive can ask you to sign
+in. The ticket also needs an internet connection.
+
+Detail:
+
+- **The file.** A ticket file goes to the Drive folder `Event tickets`,
+  named by event, day and time. The skill creates the folder when it is
+  missing.
+- **The entry.** The file is attached, and a `Ticket:` line under Venue
+  links the same file. The order number follows it.
+- **A receipt** is handled the same way, labeled `Receipt:`. The receipt's
+  pickup line is copied under the order number. The report says the
+  receipt shows personal details and is shared with no one.
+- **A wallet link** takes the `Ticket:` line, and nothing is uploaded.
+- **`Order email:` is left out** when the entry has a `Ticket:` or
+  `Receipt:` line.
+- **Guests.** The file is never shared. With a guest on the entry, the
+  report says the guest can't open the ticket.
+- **Without the Drive connector** the entry keeps the order number, the
+  ticket links and `Order email:`, and the report says the ticket could
+  not be attached.
+
 ## 0.29.1 — 2026-11-22
 
 **Two fixes for reading tickets.**
