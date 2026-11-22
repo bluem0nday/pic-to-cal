@@ -4,6 +4,49 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.28.0 — 2026-11-22
+
+**The description comes first.** When you hold a film from a theater's
+page, the hold now opens with what the film is about.
+
+Before, it opened with the theater's whole week of showtimes. In one
+outlier example, you had to scroll past 27 showtimes to reach the film
+description.
+
+What changed:
+
+- The description comes first.
+- The week of showtimes is gone. You already picked your showing, and the
+  other times go out of date.
+- One line says how far ahead the theater has posted showtimes, with a link
+  to the rest.
+- A note on your showing, such as box office only, stays on the hold.
+- A trailer link gets its own line.
+
+Detail:
+
+- **The schedule stays out of Details.** When the page leads Details, the
+  skill leaves out the schedule's heading, its dates and times, and any
+  label printed inside it. The rest of the page is still copied word for
+  word, in page order.
+- **One line replaces it.** The cautions block gets
+  `🗓 Showtimes posted through [last date] at [venue]; more on the Source
+  link (checked [M/D])`. It names the last date the page lists and never
+  calls it the end of the run, because a venue often posts one week at a
+  time. It names no times, because times change. A one-day event gets no
+  line.
+- **A label on this showing is kept.** A label printed against the entry's
+  own showing, such as box office only, becomes its own dated caution line.
+  A label on another showing is left out.
+- **Pages only.** An image's showtimes stay in Details, since the image is
+  the only place they appear.
+- **Form fields are not content.** A ticket system's field labels are left
+  out of the enrichment block. A trailer link is kept on a line of its own,
+  labeled `Trailer:`.
+- The run that found it: two holds for a first-run film at IFC Center. The
+  page printed 27 showtimes on 35 lines above the synopsis, and both holds
+  carried all of them.
+
 ## 0.27.0 — 2026-11-08
 
 An entry is now Confirmed when the user says it is, ticket or not, and its
