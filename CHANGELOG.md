@@ -4,6 +4,34 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.29.0 — 2026-11-22
+
+**The pin means Hold.** 📌 marks a hold: an event on your calendar that
+you may not have decided on yet.
+
+Before, every entry carried the pin, held or confirmed. In a month view
+you had to read each title to see which plans were set.
+
+What changed:
+
+- A Hold keeps the pin. Its time shows as free.
+- A Confirmed entry has no pin. Its time shows as busy.
+- When a Hold becomes Confirmed, the pin comes off and the time changes
+  from free to busy.
+- 🎟 still means you have a ticket.
+
+Detail:
+
+- **Titles.** `📌 Hold:` is unchanged. A Confirmed entry reads
+  `Confirmed:`, or `🎟 Confirmed:` with a ticket. A private one reads
+  `🤫 Confirmed:` or `🤫 🎟 Confirmed:`.
+- **Hold to Confirmed** drops the pin when it changes the word.
+- **Add to Confirmed** drops a pin left by an earlier version.
+- **Nothing else moves.** Free or Busy and the color still follow the
+  title, and the lookup already ignores the pin.
+- **Entries already on the calendar** keep the title they were filed
+  with until one of the actions above touches them.
+
 ## 0.28.0 — 2026-11-22
 
 **The description comes first.** When you hold a film from a theater's
