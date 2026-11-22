@@ -4,6 +4,26 @@ Semver for the skill itself — this file tracks what actually shipped in SKILL.
 Every entry opens in plain English; the bullets underneath carry the technical
 detail.
 
+## 0.29.1 — 2026-11-22
+
+**Two fixes for reading tickets.**
+
+- Some ticket PDFs hold a picture of the ticket and no text. The skill now
+  reads the date, the time and the order number from the picture. Before,
+  the skill found nothing in that type of PDF.
+- A friend buys your ticket and forwards the confirmation email to you.
+  Send the ticket to the skill. The skill then gets the order number from
+  the forwarded email.
+
+Detail:
+
+- **An image-only PDF.** An empty text layer means the PDF is an image.
+  The skill renders the pages and reads them.
+- **A forwarded confirmation** is still not proof of purchase. Once proof
+  is in hand, it can supply the order number and the other booking lines.
+- The runs that found them: an order page saved as a PDF with no text
+  layer, and a booking number that arrived in a forward from the buyer.
+
 ## 0.29.0 — 2026-11-22
 
 **The pin means Hold.** 📌 marks a hold: an event on your calendar that

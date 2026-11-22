@@ -1,6 +1,6 @@
 ---
 name: pic-to-cal
-version: 0.29.0
+version: 0.29.1
 description: Files and updates event entries on Google Calendar: a Hold for an event the user might attend, and a Confirmed entry once they are going. Invoked as "pic-to-cal" or "pic to cal". Trigger on intent, whatever the input: an event image (screenshot, flyer, poster, photo), an event-page or ticket link, a ticket PDF, a receipt or order email, or words alone. Phrasings include "calendar this", "add to calendar", "hold this event", "save the date", "pencil this in", "I got tickets", "I'm going to that show", "change it to Confirmed", "add the tickets to the hold", "did I get tickets for", "I'm not going to". Pasted or dragged screenshots count as attached. A bare pasted URL with no ask is NOT a trigger. Do NOT trigger on broad capture phrases like "save this" or "add this" with no event context; those belong to quick-capture. Do NOT trigger on a headshot, a company logo, or a screenshot of a chat message; route those to quick-capture or update-contact. If the ask names no event Claude can find, ask which one.
 ---
 
@@ -283,7 +283,7 @@ The same three steps find the entry for Remove.
 
 **When the words say only that the user is going,** search nothing. Find the entry and run Hold to Confirmed. When more than one candidate is left, ask which one. When nothing is there, the run files a new entry: Nothing to Confirmed.
 
-**When the words are about tickets,** search email for a receipt. The words count as the yes (see "Confirmed entries"). Search on each candidate's name and venue, and read only the messages whose sender or subject marks them as a receipt, such as "Your tickets" or "Order confirmation". A release notice or a forwarded copy is not the receipt. Then say what was found in one message:
+**When the words are about tickets,** search email for a receipt. The words count as the yes (see "Confirmed entries"). Search on each candidate's name and venue, and read only the messages whose sender or subject marks them as a receipt, such as "Your tickets" or "Order confirmation". A release notice or a forwarded copy is not the receipt. Once proof is in hand, such as the ticket itself, a forwarded confirmation can supply the order number and the other booking lines (2026-11-20). Then say what was found in one message:
 
 - **A receipt matches one candidate** on name, venue and date: that receipt picks the entry. A Hold changes to Confirmed, and a Confirmed entry gets Add to Confirmed. The report links the entry.
 - **No receipt turns up:** when more than one candidate is left, ask which one. Then a plain claim ("I got tickets") changes the entry and reports `No receipt found.`, and a hedge or a question ("I think I got tickets") asks the fallback question from Hold to Confirmed.
@@ -333,7 +333,7 @@ Transcription:
 
 **URL input: read the page, don't transcribe (2026-07-28, Test 16; browser-first since 2026-08-07).** For a URL, step 1 is one browser read of the page, captured verbatim — the page text plays the transcription's role everywhere downstream. Three rules: (1) Read it in the browser, not a fetcher. The Details block needs the venue's own sentences and a summarizer cannot promise them; asking harder is not a fix (step 5). (2) The frame rule applies to pages too: capture the event's own content, not site chrome, navigation, or other events listed on the page. (3) Skip the transcription display — the user sent the page, they can open it — and the body carries no transcription block; the Source link replaces it.
 
-**PDF input (2026-11-02).** Read the text layer first, then render the pages for what it misses, such as a QR code or text set as an image. Several pages are several tickets to one event, unless the pages name different events. Show the transcription as for an image.
+**PDF input (2026-11-02).** Read the text layer first, then render the pages for what it misses, such as a QR code or text set as an image. An empty text layer means the PDF is an image, not that it holds no facts: render the pages and read them (2026-11-20). Several pages are several tickets to one event, unless the pages name different events. Show the transcription as for an image.
 
 **Email input (2026-11-02).** Read the email the user names or forwards. Its text plays the transcription's role, and the run goes on as for an image. Skip the transcription display, since the user has the email.
 
